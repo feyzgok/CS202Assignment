@@ -15,9 +15,12 @@ public class Main {
             System.out.println("Connected successfully,catalog name equals "+myConnection.getCatalog());
             Statement prep_statement = myConnection.createStatement();
             System.out.println("Prepared Statement now Trying to Execute Update");
-            prep_statement.executeUpdate( "INSERT INTO public.hotel (id, address, name) VALUES(3, 'Gok2', 'okul');" );
+            prep_statement.executeUpdate( "INSERT INTO public.hotel (id, address, name) VALUES(4, 'Gok2', 'okul');" );
             System.out.println("Executed Update Statement successfully");
 
+            System.out.println("Trying close connection");
+            myConnection.close();
+            System.out.println("Closed connection byebye");
         }
         catch(SQLException e){
             System.out.println("Received SQLException here are message:");
