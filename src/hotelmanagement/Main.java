@@ -1,9 +1,6 @@
 package hotelmanagement;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 
 public class Main {
 
@@ -13,9 +10,23 @@ public class Main {
             System.out.println("Trying to establish Connection by using DBConnector");
             Connection myConnection= DriverManager.getConnection("jdbc:mysql://localhost:3306/public","root","password");
             System.out.println("Connected successfully,catalog name equals "+myConnection.getCatalog());
-            Statement prep_statement = myConnection.createStatement();
+
+            int hotelId = 5;
+            String hotelName = "HotelDynamicName";
+            String hotelAddress = "Istanbul";
+
+
+
+            System.out.println("Dynamiclly trying to do prepared statements ");
+            PreparedStatement prep_statement = myConnection.prepareStatement("INSERT INTO public.hotel (id, address, name) VALUES(?, ?, ?);");
+            prep_statement.setInt(1, hotelId);
+            System.out.println("setted hotel id");
+            prep_statement.setString(2, hotelAddress);
+            System.out.println("setted hotel address");
+            prep_statement.setString(3, hotelName);
+            System.out.println("setted hotel name");
             System.out.println("Prepared Statement now Trying to Execute Update");
-            prep_statement.executeUpdate( "INSERT INTO public.hotel (id, address, name) VALUES(4, 'Gok2', 'okul');" );
+            prep_statement.executeUpdate();
             System.out.println("Executed Update Statement successfully");
 
             System.out.println("Trying close connection");
@@ -26,7 +37,5 @@ public class Main {
             System.out.println("Received SQLException here are message:");
             System.out.println(e.getMessage());
         }
-
-
     }
 }
