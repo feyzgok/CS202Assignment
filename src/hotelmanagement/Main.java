@@ -4,6 +4,7 @@ import java.sql.*;
 import java.util.Scanner;
 
 public class Main {
+//TODO:newID eklenirken auto increment olacak
 
     public static void main(String[] args) {
 
@@ -17,8 +18,11 @@ public class Main {
             Connection myConnection = DriverManager.getConnection("jdbc:mysql://localhost:3306/public", "root", "password");
             System.out.println("Connected successfully,catalog name equals " + myConnection.getCatalog());
 
-           // addNewHotel(myConnection);
-            viewAllHotels(myConnection);
+            //addNewHotel(myConnection);
+            //viewAllHotels(myConnection);
+            //updateHotel(myConnection);
+            //deleteHotel(myConnection);
+
             System.out.println("Trying close connection");
             myConnection.close();
             System.out.println("Closed connection byebye");
@@ -73,6 +77,46 @@ public class Main {
             System.out.println(rs.getInt("id") + " " + rs.getString("name") + " " + rs.getString("address"));
         }
     }
+
+    private static void updateHotel(Connection myConnection) throws SQLException {
+        System.out.println("Now executing updateHotel");
+
+        String sql = "UPDATE public.hotel SET address= ? , name= ? WHERE id= ?;";
+        PreparedStatement  prep_statement = myConnection.prepareStatement(sql);
+
+
+        System.out.println("Please enter the hotel address");
+        Scanner in = new Scanner(System.in);
+        String hotelAddress = in.nextLine();
+        prep_statement.setString(1, hotelAddress);
+
+        System.out.println("Please enter the hotel name");
+        String hotelName  = in.nextLine();
+        prep_statement.setString(2, hotelName);
+
+        System.out.println("To update the given information, please enter the hotel ID that you want");
+        int hotelId = in.nextInt();
+        in.nextLine();
+        prep_statement.setInt(3, hotelId);
+        System.out.println("updated hotel successfully");
+
+        prep_statement.executeUpdate();
+    }
+
+    private static void deleteHotel(Connection myConnection) throws SQLException {
+        System.out.println("Now executing deleteHotel");
+        PreparedStatement prep_statement = myConnection.prepareStatement("DELETE FROM public.hotel WHERE id= ?;");
+        System.out.println("Please enter the hotel id to delete");
+        Scanner in = new Scanner(System.in);
+        int hotelId = in.nextInt();
+        in.nextLine();
+        prep_statement.setInt(1, hotelId);
+        prep_statement.executeUpdate();
+
+    }
+
+
+
 }
 
 
