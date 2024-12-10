@@ -7,14 +7,18 @@ public class Main {
 
     public static void main(String[] args) {
 
-
+//bütün sql'ları sıra sıra yazıp sonradan functiona çevir
+//kimse commit yapmasın bitirene kadar
+        //bunun üzerine sadece kendi fonksiyonlarınızı ekleyin en son ikiniz birbirinizi override yapmaman için
+//fonksiyonlar bittiğinde user interface'ını (menüyü) ekleyebiliriz
 
         try {
             System.out.println("Trying to establish Connection by using DBConnector");
             Connection myConnection = DriverManager.getConnection("jdbc:mysql://localhost:3306/public", "root", "password");
             System.out.println("Connected successfully,catalog name equals " + myConnection.getCatalog());
 
-            addHotel(myConnection);
+           // addNewHotel(myConnection);
+            viewAllHotels(myConnection);
             System.out.println("Trying close connection");
             myConnection.close();
             System.out.println("Closed connection byebye");
@@ -25,7 +29,7 @@ public class Main {
         }
     }
 
-    private static void addHotel(Connection myConnection) throws SQLException {
+    private static void addNewHotel(Connection myConnection) throws SQLException {
         System.out.println("Now executing addHotel");
         int hotelId;
         String hotelName;
@@ -54,6 +58,20 @@ public class Main {
         prep_statement.executeUpdate();
         System.out.println("Executed Update Statement successfully");
 
+    }
+
+    private static void viewAllHotels(Connection myConnection) throws SQLException {
+        System.out.println("Now executing viewAllHotels");
+        //step1: bunun sql'ı nasıl olmalı?
+        String sql = "SELECT * FROM public.hotel;";
+        //burada dynamic bir şey yok (? gibi )
+        //bu yüzden Statement yeterli
+        PreparedStatement prep_statement = myConnection.prepareStatement(sql);
+        //Şu anda result set'i alıp içindekileri geri döndürüyoruz
+        ResultSet rs = prep_statement.executeQuery();
+        while (rs.next()) {//rs.next() -> boolean
+            System.out.println(rs.getInt("id") + " " + rs.getString("name") + " " + rs.getString("address"));
+        }
     }
 }
 
