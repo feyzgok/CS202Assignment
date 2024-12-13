@@ -23,6 +23,8 @@ public class Main {
             //updateHotel(myConnection);
             //deleteHotel(myConnection);
 
+            addNewRoom(myConnection);
+
             System.out.println("Trying close connection");
             myConnection.close();
             System.out.println("Closed connection byebye");
@@ -31,6 +33,81 @@ public class Main {
             System.out.println("Received SQLException here are message:");
             System.out.println(e.getMessage());
         }
+    }
+
+    //addRoom için 1. SQL ihtiyacım bu:
+   /* INSERT INTO public.roomtype (price, type_Name, numPeople) VALUES(0, '', 0);
+   *
+   * room için sql:
+   * INSERT INTO public.room (id, name, type_name, hotel_id) VALUES(0, '', '', 0);
+   * */
+
+    private static void addNewRoom(Connection myConnection) throws SQLException {
+        Scanner in = new Scanner(System.in);
+
+        System.out.println("Please enter the hotel ID");
+        int hotelId = in.nextInt();
+        in.nextLine();
+
+        System.out.println("Please enter the roomType");//user akışına uygun şekilde refactor edilecek
+        String type_Name = in.nextLine();
+
+        System.out.println("Please enter the room ID");
+        int roomId = in.nextInt();
+        in.nextLine();
+
+        System.out.println("Please enter the room's name");
+        String roomName = in.nextLine();
+
+
+        System.out.println("Please enter the price");
+        int roomPrice = in.nextInt();
+        in.nextLine();
+
+        System.out.println("Please enter the number of people");
+        int numPeople = in.nextInt();
+        in.nextLine();
+
+        //room type add function
+        //örnek: String sql = "SELECT * FROM user WHERE mail=?";
+
+        String queryRoomTypeSql =  " select * from roomtype where type_Name = ?";
+
+        PreparedStatement prep_statement = myConnection.prepareStatement(queryRoomTypeSql);
+        prep_statement.setString(1, type_Name);
+        ResultSet rs = prep_statement.executeQuery();
+
+        if(!rs.next()){//roomType içinde bunun varlığını rs üzerinden kontrol eder sadece name'den alarak bakar(primarykey)
+            System.out.println("size equals 0 entering condition");
+            prep_statement = myConnection.prepareStatement("INSERT INTO public.roomtype (price, type_Name, numPeople) VALUES(?, ?, ?);");
+
+            prep_statement.setInt(1, roomPrice);
+            System.out.println("statement price set");
+
+            prep_statement.setString(2, type_Name);
+            System.out.println("statement name set successfully");
+
+            prep_statement.setInt(3, numPeople);
+            System.out.println("statement name numPeople successfully");
+
+            prep_statement.executeUpdate();
+            System.out.println("addNewRoomType executed");
+        }
+
+
+        //room add function
+        prep_statement = myConnection.prepareStatement("INSERT INTO public.room (id, name, type_name, hotel_id) VALUES(?, ?, ?, ?);");
+        prep_statement.setInt(1, roomId);
+        System.out.println("statement roomID set");
+        prep_statement.setString(2, roomName);
+        System.out.println("statement roomName set");
+        prep_statement.setString(3,type_Name);
+        System.out.println("statement roomtType set");
+        prep_statement.setInt(4,hotelId);
+        System.out.println("statement hotelID set");
+
+        prep_statement.executeUpdate();
+        System.out.println("addNewRoom executed");
     }
 
     private static void addNewHotel(Connection myConnection) throws SQLException {
