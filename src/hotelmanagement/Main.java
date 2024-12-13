@@ -23,7 +23,11 @@ public class Main {
             //updateHotel(myConnection);
             //deleteHotel(myConnection);
 
-            addNewRoom(myConnection);
+            //addNewRoom(myConnection);
+            //deleteRoom(myConnection);
+
+
+            //showAllRoomsByHotelId(myConnection);
 
             System.out.println("Trying close connection");
             myConnection.close();
@@ -42,8 +46,60 @@ public class Main {
    * INSERT INTO public.room (id, name, type_name, hotel_id) VALUES(0, '', '', 0);
    * */
 
+
+    private static void showAllRoomsByHotelId(Connection myConnection) throws SQLException {
+        Scanner in = new Scanner(System.in);
+
+        System.out.println("Please enter the hotel ID");
+        int hotelId = in.nextInt();
+        in.nextLine();
+
+        String sql =  " select public.room.*, public.roomtype.* from public.room join public.roomtype on public.room.type_name = public.roomtype.type_Name where public.room.hotel_id = ?";
+        PreparedStatement prep_statement = myConnection.prepareStatement(sql);
+        prep_statement.setInt(1,hotelId);
+
+        ResultSet rs=prep_statement.executeQuery();
+        System.out.println("id"+ " " + "name" + " " + "type_name");
+        while (rs.next()){
+            System.out.println(rs.getInt("id") + " " + rs.getString("name")+ " " + rs.getString("type_name"));
+        }
+    }
+
+
+    private static void deleteRoom(Connection myConnection) throws SQLException {
+        System.out.println("Now executing deleteRoom");
+        Scanner in = new Scanner(System.in);
+        System.out.println("Please enter the room ID");
+        int roomId = in.nextInt();
+        in.nextLine();
+
+        PreparedStatement prep_statement = myConnection.prepareStatement("DELETE FROM public.room WHERE id= ?;");
+        prep_statement.setInt(1, roomId);
+        System.out.println("delete room set");
+
+        System.out.println("Do you want to delete roomType too?");
+        System.out.println("Y/N?");
+        char choice = in.next().charAt(0);
+        if (choice=='Y' || choice=='y'){
+            PreparedStatement prep_statement_type =myConnection.prepareStatement("DELETE FROM public.roomtype WHERE type_Name= ?;");
+            String roomTypeId ;
+
+            PreparedStatement preparedStatement = myConnection.prepareStatement("select public.roomtype.type_Name from public.room join public.roomtype on public.room.type_name = public.roomtype.type_Name where public.room.id = 1");
+            ResultSet rs = preparedStatement.executeQuery();
+            System.out.println(rs.next());
+            roomTypeId=rs.getString("type_Name");
+            System.out.println(roomTypeId);
+            prep_statement_type.setString(1,roomTypeId);
+            prep_statement.executeUpdate();
+        }
+
+        prep_statement.executeUpdate();
+    }
+
+
     private static void addNewRoom(Connection myConnection) throws SQLException {
         Scanner in = new Scanner(System.in);
+        System.out.println("Now executing addNewRoom");
 
         System.out.println("Please enter the hotel ID");
         int hotelId = in.nextInt();
@@ -89,7 +145,6 @@ public class Main {
             prep_statement.executeUpdate();
             System.out.println("addNewRoomType executed");
         }
-
 
         System.out.println("Please enter the room ID");
         int roomId = in.nextInt();
@@ -193,11 +248,6 @@ public class Main {
         in.nextLine();
         prep_statement.setInt(1, hotelId);
         prep_statement.executeUpdate();
-
     }
 
-
-
 }
-
-
