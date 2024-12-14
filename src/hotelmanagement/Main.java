@@ -1,10 +1,17 @@
 package hotelmanagement;
 
+import java.awt.*;
 import java.sql.*;
 import java.util.Scanner;
 
 public class Main {
 //TODO:newID eklenirken auto increment olacak
+
+    //sadece user type seçilecek
+    //bir tane main functionda global static variable tut:current user static type--herkes içindekini okuyabilir
+    //login yapıldıktan sonra
+    //user type neye eşitse fonksiyonlara girmek istediğinde kontrol et--if currentUser==user gibisinden
+
 
     public static void main(String[] args) {
 
@@ -26,7 +33,7 @@ public class Main {
             //addNewRoom(myConnection);
             //deleteRoom(myConnection);
 
-
+            addNewUser(myConnection);
             //showAllRoomsByHotelId(myConnection);
 
             System.out.println("Trying close connection");
@@ -46,10 +53,82 @@ public class Main {
    * INSERT INTO public.room (id, name, type_name, hotel_id) VALUES(0, '', '', 0);
    * */
 
+    /* booking ve cleaning status yapılacak önce
+    private static void manageRoomStatus(Connection myConnection) throws SQLException {
+        System.out.println("Now executing manageRoomStatus");
+        Scanner in = new Scanner(System.in);
+
+        System.out.println("Please enter the hotel ID");
+        System.out.println("Please enter the");
+
+        --user type'a göre değişik menüler gösterecek
+        1.check in
+        2.check out--receptionist de yapabilir
+        3.mark room for cleaning
+        4.make payment
+
+    }*/
+
+
+    private static void addNewUser(Connection myConnection) throws SQLException {
+        System.out.println("Now executing showAllRoomsByHotelId");
+        Scanner in = new Scanner(System.in);
+        System.out.println("Please enter the user ID");
+        int userId = in.nextInt();
+        in.nextLine();
+        System.out.println("Please enter the username");
+        String username = in.nextLine();
+        System.out.println("Please enter the password");
+        String password = in.nextLine();
+        System.out.println("For employee enter:E/e");
+        System.out.println("For housekeeper enter:H/h");
+        System.out.println("For recep enter:R/r");
+        String type="";
+
+        while (type.isEmpty()){
+            System.out.println("Please enter the type in this format");
+            type = in.nextLine().toUpperCase();
+            switch (type){
+                case "E":
+                    type="employee";
+                    break;
+
+                case "H":
+                    type = "housekeeper";
+                    break;
+
+                case "R":
+                    type = "receptionist";
+                    break;
+                default:
+                    type="";
+                    break;
+            }
+        }
+
+        System.out.println("You selected: " + type);
+
+        System.out.println("Please enter the name");
+        String name = in.nextLine();
+        System.out.println("Please enter the surname");
+        String surname = in.nextLine();
+
+        String sql = "INSERT INTO public.`user` (id, username, password, `type`, name, surname) VALUES(?, ?, ?, ?, ?, ?);";
+        PreparedStatement prep_statement = myConnection.prepareStatement(sql);
+
+        prep_statement.setInt(1, userId);
+        prep_statement.setString(2, username);
+        prep_statement.setString(3, password);
+        prep_statement.setString(4, type);
+        prep_statement.setString(5,name);
+        prep_statement.setString(6,surname);
+
+        prep_statement.executeUpdate();
+    }
 
     private static void showAllRoomsByHotelId(Connection myConnection) throws SQLException {
         Scanner in = new Scanner(System.in);
-
+        System.out.println("Now executing showAllRoomsByHotelId");
         System.out.println("Please enter the hotel ID");
         int hotelId = in.nextInt();
         in.nextLine();
