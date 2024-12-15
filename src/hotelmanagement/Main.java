@@ -2,6 +2,7 @@ package hotelmanagement;
 
 import java.awt.*;
 import java.sql.*;
+import java.util.Locale;
 import java.util.Scanner;
 
 public class Main {
@@ -32,9 +33,16 @@ public class Main {
 
             //addNewRoom(myConnection);
             //deleteRoom(myConnection);
-
             addNewUser(myConnection);
+
+            //viewAllUsers(myConnection);
+
             //showAllRoomsByHotelId(myConnection);
+
+            //addNewGuest(myConnection);
+            //deleteGuest(myConnection);
+            //viewAllGuests(myConnection);
+
 
             System.out.println("Trying close connection");
             myConnection.close();
@@ -66,9 +74,166 @@ public class Main {
         2.check out--receptionist de yapabilir
         3.mark room for cleaning
         4.make payment
-
     }*/
 
+    //TODO:BURCU'YA RECEPTIONIST VE HOUSEKEEPERLARA DA AD SOYAD VS. EKLESEK MI DIYE SOR !!!
+    //YAPMASI RAHAT AMA ÖNCE DB DEĞİŞMELİ
+    private static void addNewReceptionist(Connection myConnection, int receptionist_employeeId) throws SQLException {
+        System.out.println("Now executing addNewReceptionist");
+        Scanner in = new Scanner(System.in);
+
+        System.out.println("enter id");
+        int receptionId = in.nextInt();
+        in.nextLine();
+
+        int employeeId = receptionist_employeeId;
+
+        PreparedStatement prep_statement = myConnection.prepareStatement("INSERT INTO public.receptionist (id, employee_id) VALUES(?, ?);");
+        prep_statement.setInt(1,receptionId);
+        prep_statement.setInt(2,employeeId);
+        prep_statement.executeUpdate();
+    }
+
+    private static void addNewHousekeeper(Connection myConnection, int housekeeper_employeeId) throws SQLException {
+        System.out.println("Now executing addNewHousekeeper");
+        Scanner in = new Scanner(System.in);
+
+        System.out.println("Please enter the housekeeper ID");
+        int housekeeperId = in.nextInt();
+        in.nextLine();
+
+        int employeeId = housekeeper_employeeId;
+
+        PreparedStatement prep_statement = myConnection.prepareStatement("INSERT INTO public.housekeeping_staff (id, employee_id) VALUES(?, ?);");
+        prep_statement.setInt(1,housekeeperId);
+        prep_statement.setInt(2,employeeId);
+        prep_statement.executeUpdate();
+    }
+
+    private static void addNewEmployee(Connection myConnection) throws SQLException {
+        System.out.println("Now executing addNewEmployee");
+        Scanner in = new Scanner(System.in);
+        System.out.println("enter id");
+        int id = in.nextInt();
+        in.nextLine();
+
+        System.out.println("enter user id");
+        int userId = in.nextInt();
+        in.nextLine();
+
+        System.out.println("enter hotel id");
+        int hotelId= in.nextInt();
+        in.nextLine();
+
+        String sql ="INSERT INTO public.employee (id, user_id, hotel_id) VALUES(?, ?, ?);";
+        PreparedStatement prep_statement = myConnection.prepareStatement(sql);
+        prep_statement.setInt(1,id);
+        prep_statement.setInt(2,userId);
+        prep_statement.setInt(3,hotelId);
+
+        prep_statement.executeUpdate();
+    }
+
+
+    private static void addNewGuest(Connection myConnection, String guest_name,  String guest_surname, int guest_userId) throws SQLException {
+        System.out.println("Now executing addNewGuest");
+        Scanner in = new Scanner(System.in);
+
+        System.out.println("Please enter the guest ID");
+        int guestId = in.nextInt();
+        in.nextLine();
+        String guestName = guest_name;
+        String guestSurname = guest_surname;
+        System.out.println("Please enter the guest phone number");
+        String guestPhone = in.nextLine();
+        int userId = guest_userId;
+
+        PreparedStatement prep_statement = myConnection.prepareStatement("INSERT INTO public.guest (id, name, surname, phone_num, user_id) VALUES(?, ?, ?, ?, ?);");
+        prep_statement.setInt(1,guestId);
+        prep_statement.setString(2, guestName);
+        prep_statement.setString(3, guestSurname);
+        prep_statement.setInt(4, Integer.valueOf(guestPhone));//TODO: LONG/INT için gerçek numaralar denedik -- tekrar denenecek
+        prep_statement.setInt(5, userId);
+
+        prep_statement.executeUpdate();
+    }
+
+    private static void addNewGuest(Connection myConnection) throws SQLException {
+        System.out.println("Now executing addNewGuest");
+        Scanner in = new Scanner(System.in);
+        System.out.println("Please enter the guest ID");
+        int guestId = in.nextInt();
+        in.nextLine();
+        System.out.println("Please enter the guest name");
+        String guestName = in.nextLine();
+        System.out.println("Please enter the guest surname");
+        String guestSurname = in.nextLine();
+        System.out.println("Please enter the guest phone number");
+        String guestPhone = in.nextLine();
+        System.out.println("Please enter the guest user id");
+        int userId = in.nextInt();
+        in.nextLine();
+
+        PreparedStatement prep_statement = myConnection.prepareStatement("INSERT INTO public.guest (id, name, surname, phone_num, user_id) VALUES(?, ?, ?, ?, ?);");
+        prep_statement.setInt(1,guestId);
+        prep_statement.setString(2, guestName);
+        prep_statement.setString(3, guestSurname);
+        prep_statement.setInt(4, Integer.valueOf(guestPhone));//TODO: LONG/INT için gerçek numaralar denedik -- tekrar denenecek
+        prep_statement.setInt(5,userId);
+
+        prep_statement.executeUpdate();
+    }
+
+    private static void deleteGuest(Connection myConnection) throws SQLException {
+        System.out.println("Now executing deleteGuest");
+        Scanner in = new Scanner(System.in);
+        System.out.println("Please enter the guest ID");
+        int guestId = in.nextInt();
+        in.nextLine();
+
+        PreparedStatement prep_statement = myConnection.prepareStatement("DELETE FROM public.guest WHERE id= ?;");
+        prep_statement.setInt(1, guestId);
+        prep_statement.executeUpdate();
+    }
+
+/*
+    //TODO:idsi girilen USERIN BOOKLADIĞI ODALARIN ROOM NAME'INI LISTELE
+    private static void viewAllBookedRoomNameGuestlId(Connection myConnection) throws SQLException {
+        System.out.println("Now executing viewAllBookedRoomNameGuestlId");
+
+    }
+
+ */
+
+    //idsi girilen USERIN BOOKLADIĞI ODALARIN ROOM IDLERINI LISTELER
+    private static void viewAllBookingRoomIdByGuestlId(Connection myConnection) throws SQLException {
+        System.out.println("Now executing viewAllBookingRoomIdByGuestlId");
+        String sql = "SELECT public.booking.* FROM public.booking join public.guest on public.booking.guest_id = public.guest.id where public.guest.id = 1 ;";
+        PreparedStatement prep_statement = myConnection.prepareStatement(sql);
+        ResultSet rs = prep_statement.executeQuery();
+        while (rs.next()){
+            System.out.println("id" + " " + "booking room id" + " " + "start date" + " " + "end date");
+            System.out.println(rs.getInt("id") + " " + rs.getString("room_id") + " " + rs.getString("startdate") + " " + rs.getString("enddate"));
+        }
+    }
+
+    private static void viewAllGuests(Connection myConnection) throws SQLException {
+        System.out.println("Now executing viewAllGuests");
+        PreparedStatement prep_statement = myConnection.prepareStatement("SELECT id, name, surname, phone_num, user_id FROM public.guest;");
+        ResultSet rs=prep_statement.executeQuery();
+        while (rs.next()){
+            System.out.println(rs.getInt("id") + " " + rs.getString("name")+ " " + rs.getString("surname")+" "+ rs.getInt("phone_num"));
+        }
+    }
+
+    private static void viewAllUsers(Connection myConnection) throws SQLException {
+        System.out.println("Now executing viewAllUsers");
+        PreparedStatement prep_statement = myConnection.prepareStatement("SELECT id, username, password, `type`, name, surname FROM public.`user`;");
+        ResultSet rs = prep_statement.executeQuery();
+        while (rs.next()){
+            System.out.println(rs.getInt("id") + " " + rs.getString("name") + " " + rs.getString("surname"));
+        }
+    }
 
     private static void addNewUser(Connection myConnection) throws SQLException {
         System.out.println("Now executing showAllRoomsByHotelId");
@@ -80,26 +245,32 @@ public class Main {
         String username = in.nextLine();
         System.out.println("Please enter the password");
         String password = in.nextLine();
-        System.out.println("For employee enter:E/e");
         System.out.println("For housekeeper enter:H/h");
-        System.out.println("For recep enter:R/r");
+        System.out.println("For receptionist enter:R/r");
+        System.out.println("For guest enter: G/g");
         String type="";
 
+        int choice=-1;
         while (type.isEmpty()){
             System.out.println("Please enter the type in this format");
             type = in.nextLine().toUpperCase();
+
             switch (type){
-                case "E":
-                    type="employee";
+                case "G":
+                    type = "guest";
+                    choice = 0;
                     break;
 
                 case "H":
                     type = "housekeeper";
+                    choice=1;
                     break;
 
                 case "R":
                     type = "receptionist";
+                    choice=2;
                     break;
+
                 default:
                     type="";
                     break;
@@ -124,6 +295,22 @@ public class Main {
         prep_statement.setString(6,surname);
 
         prep_statement.executeUpdate();
+
+        switch (choice){
+            case 0:
+                String guest_name=name;
+                String guest_surname=surname;
+                addNewGuest(myConnection, guest_name, guest_surname, userId);
+                break;
+
+            case 1:
+                addNewHousekeeper(myConnection, userId);
+                break;
+
+            case 2:
+                 addNewReceptionist(myConnection, userId);
+            break;
+        }
     }
 
     private static void showAllRoomsByHotelId(Connection myConnection) throws SQLException {
@@ -298,7 +485,6 @@ public class Main {
 
         String sql = "UPDATE public.hotel SET address= ? , name= ? WHERE id= ?;";
         PreparedStatement  prep_statement = myConnection.prepareStatement(sql);
-
 
         System.out.println("Please enter the hotel address");
         Scanner in = new Scanner(System.in);
