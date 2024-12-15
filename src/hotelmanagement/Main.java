@@ -1,9 +1,7 @@
 package hotelmanagement;
 
-import java.awt.*;
 import java.sql.*;
 import java.util.InputMismatchException;
-import java.util.Locale;
 import java.util.Scanner;
 
 public class Main {
