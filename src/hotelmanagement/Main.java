@@ -5,7 +5,7 @@ import java.util.InputMismatchException;
 import java.util.Scanner;
 
 public class Main {
-//TODO:newID eklenirken auto increment olacak
+//TODO:newID eklenirken auto increment olacak--yarının ikinci işi
 
     //sadece user type seçilecek
     //bir tane main functionda global static variable tut:current user static type--herkes içindekini okuyabilir
@@ -25,6 +25,7 @@ public class Main {
             Connection myConnection = DriverManager.getConnection("jdbc:mysql://localhost:3306/public", "root", "password");
             System.out.println("Connected successfully,catalog name equals " + myConnection.getCatalog());
 
+
             //addNewHotel(myConnection);
             //viewAllHotels(myConnection);
             //updateHotel(myConnection);
@@ -32,9 +33,13 @@ public class Main {
 
             //addNewRoom(myConnection);
             //deleteRoom(myConnection);
-            addNewUser(myConnection);
+            //addNewUser(myConnection);
+
+            //checkAdminById(myConnection);
 
             //viewAllUsers(myConnection);
+            //viewAllUsersWithTheirRoleById(myConnection);
+
 
             //showAllRoomsByHotelId(myConnection);
 
@@ -75,6 +80,119 @@ public class Main {
         4.make payment
     }*/
 
+
+    private static void addNewAdmin(Connection myConnection, int admin_employeeId) throws SQLException {
+        System.out.println("Now executing addNewAdmin");
+        Scanner in = new Scanner(System.in);
+
+        System.out.println("enter id");
+        int adminId = in.nextInt();
+        in.nextLine();
+
+        PreparedStatement prep_statement = myConnection.prepareStatement("INSERT INTO public.admin (id, employee_id) VALUES(?, ?);");
+        prep_statement.setInt(1,adminId);
+        prep_statement.setInt(2,admin_employeeId);
+        prep_statement.executeUpdate();
+    }
+
+    private static int checkAdminById(Connection myConnection) throws SQLException {
+        System.out.println("Now executing checkAdminById");
+        Scanner in = new Scanner(System.in);
+        int adminId = 0;
+        boolean validAdminId = false;
+
+        String adminSql = "SELECT id, employee_id FROM public.admin WHERE public.admin.id = ?;";
+
+        // valid admin id alır (tabloda halihazırda varsa validtir)
+        while (!validAdminId) {
+            System.out.println("Enter a valid admin ID:");
+
+            try {
+                adminId = in.nextInt();
+                in.nextLine(); // Consume the newline
+
+                try (PreparedStatement admin_prep_statement = myConnection.prepareStatement(adminSql)) {
+                    admin_prep_statement.setInt(1, adminId);
+
+                    try (ResultSet rs = admin_prep_statement.executeQuery()) {
+                        if (rs.next()) {
+                            System.out.println("You are lucky. The admin with the given ID exists.");
+                            validAdminId = true;
+                        } else {
+                            System.out.println("There is no admin with this ID. Please try again.");
+                        }
+                    }
+                }
+            } catch (InputMismatchException e) {
+                System.out.println("Invalid input. Please enter a numeric admin ID.");
+                in.nextLine(); // Clear the invalid input
+            } catch (SQLException e) {
+                System.out.println("Database error: " + e.getMessage());
+                return 0; // Exit--adminId 0 can't be valid
+            }
+        }
+
+        //System.out.println("adminId:" +adminId);
+        return adminId;
+    }
+
+
+    //checks Hotels to return valid existed hotel's id
+    private static int checkHotelById(Connection myConnection) throws SQLException {
+        System.out.println("Now executing checkHotelById");
+        Scanner in = new Scanner(System.in);
+        int hotelId = 0;
+        boolean validHotelId = false;
+
+        String hotelSql = "SELECT id, address, name FROM public.hotel WHERE public.hotel.id = ?;";
+
+        // valid hotel id alır ( tabloda halihazırda varsa validtir)
+        while (!validHotelId) {
+            System.out.println("Enter a valid hotel ID:");
+
+            try {
+                hotelId = in.nextInt();
+                in.nextLine(); // Consume the newline
+
+                try (PreparedStatement hotel_prep_statement = myConnection.prepareStatement(hotelSql)) {
+                    hotel_prep_statement.setInt(1, hotelId);
+
+                    try (ResultSet rs = hotel_prep_statement.executeQuery()) {
+                        if (rs.next()) {
+                            System.out.println("You are lucky. The hotel with the given ID exists.");
+                            validHotelId = true;
+                        } else {
+                            System.out.println("There is no hotel with this ID. Please try again.");
+                        }
+                    }
+                }
+            } catch (InputMismatchException e) {
+                System.out.println("Invalid input. Please enter a numeric hotel ID.");
+                in.nextLine();
+            } catch (SQLException e) {
+                System.out.println("Database error: " + e.getMessage());
+                return 0; // Exit--hotelId 0 olamaz
+            }
+        }
+
+        return hotelId;
+    }
+
+    //creates revenue report and adds to revenueReport table
+    private static void addNewRevenueReport(Connection myConnection) throws SQLException {
+        System.out.println("Now executing addNewRevenueReport");
+        Scanner in = new Scanner(System.in);
+        System.out.println("enter the revenue ID");
+        int id = in.nextInt();
+        in.nextLine();
+
+        int adminId = checkAdminById(myConnection);
+        int hotelId = checkHotelById(myConnection);
+
+
+
+    }
+
     //TODO:BURCU'YA RECEPTIONIST VE HOUSEKEEPERLARA DA AD SOYAD VS. EKLESEK MI DIYE SOR !!!
     //YAPMASI RAHAT AMA ÖNCE DB DEĞİŞMELİ
     private static void addNewReceptionist(Connection myConnection, int receptionist_employeeId) throws SQLException {
@@ -109,48 +227,16 @@ public class Main {
         System.out.println("Now executing addNewEmployee");
         Scanner in = new Scanner(System.in);
 
-        int hotelId = 0;
-        boolean validHotelId = false;
+        int hotelId = checkHotelById(myConnection);
 
-        String hotelSql = "SELECT id, address, name FROM public.hotel WHERE public.hotel.id = ?;";
-
-        // Loop to get a valid hotel ID
-        while (!validHotelId) {
-            System.out.println("Enter a valid hotel ID:");
-
-            try {
-                hotelId = in.nextInt();
-                in.nextLine(); // Consume the newline
-
-                try (PreparedStatement hotel_prep_statement = myConnection.prepareStatement(hotelSql)) {
-                    hotel_prep_statement.setInt(1, hotelId);
-
-                    try (ResultSet rs = hotel_prep_statement.executeQuery()) {
-                        if (rs.next()) {
-                            System.out.println("You are lucky. The hotel with the given ID exists.");
-                            validHotelId = true;
-                        } else {
-                            System.out.println("There is no hotel with this ID. Please try again.");
-                        }
-                    }
-                }
-            } catch (InputMismatchException e) {
-                System.out.println("Invalid input. Please enter a numeric hotel ID.");
-                in.nextLine(); // Clear the invalid input
-            } catch (SQLException e) {
-                System.out.println("Database error: " + e.getMessage());
-                return; // Exit the method on database error
-            }
-        }
-
-        System.out.println("Function continues...");
+        //System.out.println("Function continues...");
 
         // Insert the new employee
         String sql = "INSERT INTO public.employee (id, user_id, hotel_id) VALUES (?, ?, ?);";
 
         System.out.println("Please enter the ID for the employee:");
         int id = in.nextInt();
-        in.nextLine(); // Consume the newline
+        in.nextLine();
 
         try (PreparedStatement prep_statement = myConnection.prepareStatement(sql)) {
             prep_statement.setInt(1, id);
@@ -168,6 +254,9 @@ public class Main {
                 case 2:
                     addNewReceptionist(myConnection, id);
                     break;
+
+                case 3:
+                    addNewAdmin(myConnection, id);
                 default:
                     System.out.println("Invalid choice. No specific role assigned.");
             }
@@ -198,14 +287,14 @@ public class Main {
             }
 
 
-            System.out.println("hotelSql connect edemedilerimizdenmisiniz");
+            //System.out.println("hotelSql connect edemedilerimizdenmisiniz");
             hotelSql = "SELECT id, address, name FROM public.hotel where public.hotel.id = ?;";
-            System.out.println("hotelSql connect edilecek");
+            //System.out.println("hotelSql connect edilecek");
             hotel_prep_statement = myConnection.prepareStatement(hotelSql);
             hotel_prep_statement.setInt(1,hotelId);
-            System.out.println("hotelSql connect edildi");
+            //System.out.println("hotelSql connect edildi");
             rs = hotel_prep_statement.executeQuery();
-            System.out.println("hotelSql connect edilmiştir");
+            //System.out.println("hotelSql connect edilmiştir");
             if(rs.next()){
                 System.out.println(rs.getInt("id"));
                 System.out.println("You are lucky. The hotel with given id is already existed");
@@ -217,7 +306,7 @@ public class Main {
             }
         }
 
-        System.out.println("fonksiyon kaldığı yerden devam ediyor...");
+        //System.out.println("fonksiyon kaldığı yerden devam ediyor...");
         String sql ="INSERT INTO public.employee (id, user_id, hotel_id) VALUES(?, ?, ?);";
         PreparedStatement prep_statement = myConnection.prepareStatement(sql);
         System.out.println("Please enter the id for employee");
@@ -303,9 +392,7 @@ public class Main {
     //TODO:idsi girilen USERIN BOOKLADIĞI ODALARIN ROOM NAME'INI LISTELE
     private static void viewAllBookedRoomNameGuestlId(Connection myConnection) throws SQLException {
         System.out.println("Now executing viewAllBookedRoomNameGuestlId");
-
     }
-
  */
 
     //idsi girilen USERIN BOOKLADIĞI ODALARIN ROOM IDLERINI LISTELER
@@ -338,6 +425,23 @@ public class Main {
         }
     }
 
+    private static void viewAllUsersWithTheirRoleById(Connection myConnection) throws SQLException {
+        //userı getir -- employeeıd'den getir user idyi
+        //user idsini employeeden çekip listelettiğin userların type'ını çekmelisin
+        System.out.println("Now executing viewAllUsersWithTheirRole");
+        Scanner in = new Scanner(System.in);
+        System.out.println("Please enter the user ID");
+        int userId = in.nextInt();
+        in.nextLine();
+
+        PreparedStatement prep_statement = myConnection.prepareStatement("SELECT `type` FROM public.`user` where public.user.id = ?;");
+        prep_statement.setInt(1, userId);
+        ResultSet rs = prep_statement.executeQuery();
+        while (rs.next()){
+            System.out.println("User type: "+rs.getString("type"));
+        }
+    }
+
     private static void addNewUser(Connection myConnection) throws SQLException {
         System.out.println("Now executing showAllRoomsByHotelId");
         Scanner in = new Scanner(System.in);
@@ -351,6 +455,7 @@ public class Main {
         System.out.println("For housekeeper enter:H/h");
         System.out.println("For receptionist enter:R/r");
         System.out.println("For guest enter: G/g");
+        System.out.println("For admin enter:A/a");
         String type="";
 
         int choice=-1;
@@ -372,6 +477,11 @@ public class Main {
                 case "R":
                     type = "receptionist";
                     choice=2;//employeeId
+                    break;
+
+                case "A":
+                    type = "admin";
+                    choice=3;
                     break;
 
                 default:
@@ -610,5 +720,7 @@ public class Main {
         prep_statement.setInt(1, hotelId);
         prep_statement.executeUpdate();
     }
+
+
 
 }
