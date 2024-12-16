@@ -5,6 +5,16 @@ import java.time.*;
 import java.util.*;
 import java.util.Date;
 
+/*Bunların hepsine yarın sql yazılıp kontrol edilecek: todo first
+            – View All Housekeeping Records
+            – Assign Housekeeping Task
+            – View All Housekeepers Records and Their Availability
+            – View Pending Housekeeping Tasks
+            – View Completed Housekeeping Tasks
+            – Update Task Status to Completed
+            – View My Cleaning Schedule
+
+ */
 
 public class Main {
 //TODO:newID eklenirken auto increment olacak--yarının ikinci işi
@@ -38,7 +48,7 @@ public class Main {
             //addNewUser(myConnection);
 
             //checkAdminById(myConnection);
-            checkRoomById(myConnection);
+            //checkRoomById(myConnection);
             //viewAllUsers(myConnection);
             //viewTypeOfUserById(myConnection);
 
@@ -51,7 +61,7 @@ public class Main {
             //addNewGuest(myConnection);
             //deleteGuest(myConnection);
             //viewAllGuests(myConnection);
-
+            viewAllHousekeepersRecordsAndAvailability(myConnection);
 
             System.out.println("Trying close connection");
             myConnection.close();
@@ -60,6 +70,56 @@ public class Main {
         catch(SQLException e){
             System.out.println("Received SQLException here are message:");
             System.out.println(e.getMessage());
+        }
+    }
+
+    // Method to view all housekeepers and their availability
+    //TODO:availability için ekstra column mı eklemek lazım nasıl olacak bu iş düşün
+    private static void viewAllHousekeepersRecordsAndAvailability(Connection myConnection) throws SQLException {
+        System.out.println("Now executing viewAllHousekeepersRecordsAndAvailability");
+        String sql = "SELECT hs.id AS housekeeper_id, e.id AS employee_id, u.name, u.surname, " +
+                "CASE WHEN EXISTS (" +
+                "    SELECT 1 FROM public.housekeeping_schedule hsched " +
+                "    WHERE hsched.housekeeping_staff_id = hs.id AND hsched.cleaning_status = 'Pending'" +
+                ") THEN 'Not Available' ELSE 'Available' END AS availability " +
+                "FROM public.housekeeping_staff hs " +
+                "JOIN public.employee e ON hs.employee_id = e.id " +
+                "JOIN public.user u ON e.user_id = u.id;";
+
+        PreparedStatement prep_statement = myConnection.prepareStatement(sql);
+        ResultSet rs = prep_statement.executeQuery();
+
+        System.out.println("Housekeeper ID | Employee ID | Name | Surname | Availability");
+        while (rs.next()) {
+            System.out.println(
+                    rs.getInt("housekeeper_id") + " | " +
+                            rs.getInt("employee_id") + " | " +
+                            rs.getString("name") + " | " +
+                            rs.getString("surname") + " | " +
+                            rs.getString("availability")
+            );
+        }
+    }
+
+    // Method to view all housekeepers
+    private static void viewAllHousekeepersRecords(Connection myConnection) throws SQLException {
+        System.out.println("Now executing viewAllHousekeepersRecordsAndAvailability");
+        String sql = "SELECT hs.id AS housekeeper_id, e.id AS employee_id, u.name, u.surname, hs.id AS housekeeping_staff_id " +
+                "FROM public.housekeeping_staff hs " +
+                "JOIN public.employee e ON hs.employee_id = e.id " +
+                "JOIN public.user u ON e.user_id = u.id;";
+
+        PreparedStatement prep_statement = myConnection.prepareStatement(sql);
+        ResultSet rs = prep_statement.executeQuery();
+
+        System.out.println("Housekeeper ID | Employee ID | Name | Surname");
+        while (rs.next()) {
+            System.out.println(
+                    rs.getInt("housekeeper_id") + " | " +
+                            rs.getInt("employee_id") + " | " +
+                            rs.getString("name") + " | " +
+                            rs.getString("surname")
+            );
         }
     }
 
