@@ -1,9 +1,12 @@
 package hotelmanagement;
 
+import com.mysql.cj.callback.MysqlCallback;
+
 import java.sql.*;
 import java.time.*;
 import java.util.*;
 import java.util.Date;
+//TODO:DELETE USER
 
 //addRoom için 1. SQL ihtiyacım bu:
 /* INSERT INTO public.roomtype (price, type_Name, numPeople) VALUES(0, '', 0);
@@ -58,12 +61,11 @@ public class Main {
             //viewTypeOfUserById(myConnection);
             //viewAllUsers(myConnection);
             //viewPendingHousekeepingTasks(myConnection);
-
-            viewAllEmployeeswithTheirRoles(myConnection);
+            //viewAllEmployeeswithTheirRoles(myConnection);
             //viewAllHousekeepingRecords(myConnection);
             //viewAllHousekeepingSchedules(myConnection);
             //showAllRoomsByHotelId(myConnection);
-
+            //checkHousekeepingStaffById(myConnection);
             //addNewGuest(myConnection);
             //deleteGuest(myConnection);
             //viewAllGuests(myConnection);
@@ -85,15 +87,45 @@ public class Main {
         System.out.println("Now executing assignHousekeepingTask");
         Scanner in = new Scanner(System.in);
 
-        int scheduleId = checkHousekeepingScheduleById(myConnection);
-
-        System.out.println("Enter the room ID:");
-        int roomId = in.nextInt();
+        System.out.println("Enter the housekeeping schedule ID");
+        int scheduleId = in.nextInt();
         in.nextLine();
 
-        System.out.println("Enter the housekeeping staff ID:");
-        int staffId = in.nextInt();
-        in.nextLine();
+        // Check if the room and housekeeping staff belong to the same hotel
+        boolean isValidID = false;
+        int roomId = 0;
+        int staffId = 0;
+        while (!isValidID) {
+            System.out.println("Enter the room ID:");
+            roomId = checkRoomById(myConnection);
+
+            System.out.println("Enter the housekeeping staff ID:");
+            staffId = checkHousekeepingStaffById(myConnection);
+
+            // Get the hotel ID for the housekeeping staff
+            PreparedStatement h_prep_statement = myConnection.prepareStatement("SELECT public.employee.hotel_id FROM public.employee JOIN public.housekeeping_staff ON public.housekeeping_staff.employee_id = public.employee.id WHERE public.housekeeping_staff.id = ?;");
+            h_prep_statement.setInt(1, staffId);
+            ResultSet h_rs = h_prep_statement.executeQuery();
+            h_rs.next();
+            int housekeeper_hotel_id = h_rs.getInt("hotel_id");
+
+            // Get the hotel ID for the room
+            PreparedStatement r_prep_statement = myConnection.prepareStatement("SELECT hotel_id FROM public.room WHERE public.room.id = ?;");
+            r_prep_statement.setInt(1, roomId);
+            ResultSet r_rs = r_prep_statement.executeQuery();
+            r_rs.next();
+            int room_hotel_id = r_rs.getInt("hotel_id");
+
+            if (room_hotel_id == housekeeper_hotel_id) {
+                isValidID = true;
+                System.out.println("Valid IDs. Both the room and the housekeeping staff belong to the same hotel.");
+            } else {
+                System.out.println("Invalid IDs. The room belongs to hotel ID " + room_hotel_id +
+                        " while the housekeeper belongs to hotel ID " + housekeeper_hotel_id + ".");
+                System.out.println("Please again enter IDs for the same hotel.");
+            }
+        }
+
 
         System.out.println("Enter the scheduled date (yyyy-mm-dd):");
         String scheduleDate = in.nextLine();
@@ -124,8 +156,7 @@ public class Main {
             return;
         }
 
-        String sql = "INSERT INTO public.housekeeping_schedule (id, room_id, housekeeping_staff_id, scheduledate, cleaning_status, receptionist_id) " +
-                "VALUES (?, ?, ?, ?, 'Pending', ?);";
+        String sql = "INSERT INTO public.housekeeping_schedule (id, room_id, housekeeping_staff_id, scheduledate, cleaning_status, receptionist_id) VALUES (?, ?, ?, ?, 'Pending', ?);";
 
         PreparedStatement prep_statement = myConnection.prepareStatement(sql);
         prep_statement.setInt(1, scheduleId);
@@ -138,7 +169,6 @@ public class Main {
         System.out.println("Task assigned successfully to housekeeping staff.");
     }
 
-    // Method for housekeeping staff to view their cleaning schedule
     private static void viewMyCleaningSchedule(Connection myConnection) throws SQLException {
         System.out.println("Now executing viewMyCleaningSchedule");
         Scanner in = new Scanner(System.in);
@@ -147,10 +177,34 @@ public class Main {
         int housekeepingStaffId = in.nextInt();
         in.nextLine();
 
-        String sql = "SELECT hs.id, hs.room_id, hs.scheduledate, hs.cleaning_status, r.name AS room_name " +
-                "FROM public.housekeeping_schedule hs " +
-                "JOIN public.room r ON hs.room_id = r.id " +
-                "WHERE hs.housekeeping_staff_id = ?;";
+        String sql = "SELECT hs.id, hs.room_id, hs.scheduledate, hs.cleaning_status, r.name AS room_name FROM public.housekeeping_schedule hs JOIN public.room r ON hs.room_id = r.id WHERE hs.housekeeping_staff_id = ? AND hs.cleaning_status = 'Pending' ORDER BY hs.scheduledate;";
+
+        PreparedStatement prep_statement = myConnection.prepareStatement(sql);
+        prep_statement.setInt(1, housekeepingStaffId);
+        ResultSet rs = prep_statement.executeQuery();
+
+        while (rs.next()) {
+            System.out.println( "Schedule ID:"+ rs.getInt("id") + " | " +
+                            "Room ID:"+rs.getInt("room_id") + " | " +
+                            "Room Name:"+rs.getString("room_name") + " | " +
+                            "Schedule Date:"+rs.getDate("scheduledate") + " | " +
+                            "Cleaning Status:"+rs.getString("cleaning_status")
+            );
+        }
+    }
+
+
+    // Method for housekeeping staff to view their cleaning schedule
+    //bu userın sadece sıra sıra room idlerini ve daha sonra datelerini date'leri order by ile orderlanıp gösterilebilinir
+    private static void viewHousekeepingScheduleByHousekeepingScheduleId(Connection myConnection) throws SQLException {
+        System.out.println("Now executing viewMyCleaningSchedule");
+        Scanner in = new Scanner(System.in);
+
+        System.out.println("Enter your Housekeeper ID:");
+        int housekeepingStaffId = in.nextInt();
+        in.nextLine();
+
+        String sql = "SELECT hs.id, hs.room_id, hs.scheduledate, hs.cleaning_status, r.name AS room_name FROM public.housekeeping_schedule hs JOIN public.room r ON hs.room_id = r.id WHERE hs.housekeeping_staff_id = ?;";
 
         PreparedStatement prep_statement = myConnection.prepareStatement(sql);
         prep_statement.setInt(1, housekeepingStaffId);
@@ -481,6 +535,45 @@ public class Main {
         }
 
         return roomId;
+    }
+
+    private static int checkHousekeepingStaffById(Connection myConnection) throws SQLException {
+        System.out.println("Now executing checkHousekeepingScheduleById");
+        Scanner in = new Scanner(System.in);
+        int scheduleId = 0;
+        boolean validId = false;
+
+        String Sql = "SELECT id, employee_id FROM public.housekeeping_staff WHERE id = ?;";
+
+        while (!validId) {
+            System.out.println("Enter a valid housekeeping staff ID:");
+
+            try {
+                scheduleId = in.nextInt();
+                in.nextLine();
+
+                try (PreparedStatement schedule_prep_statement = myConnection.prepareStatement(Sql)) {
+                    schedule_prep_statement.setInt(1, scheduleId);
+
+                    try (ResultSet rs = schedule_prep_statement.executeQuery()) {
+                        if (rs.next()) {
+                            System.out.println("You are lucky. The housekeeping staff with the given ID exists.");
+                            validId = true;
+                        } else {
+                            System.out.println("There is no housekeeping staff with this ID. Please try again.");
+                        }
+                    }
+                }
+            } catch (InputMismatchException e) {
+                System.out.println("Invalid input. Please enter a numeric housekeeping staff ID.");
+                in.nextLine();
+            } catch (SQLException e) {
+                System.out.println("Database error: " + e.getMessage());
+                return 0;
+            }
+        }
+
+        return scheduleId;
     }
 
     // Method to check if a housekeeping schedule exists by its ID
