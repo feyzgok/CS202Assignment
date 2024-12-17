@@ -70,7 +70,7 @@ public class Main {
             //deleteGuest(myConnection);
             //viewAllGuests(myConnection);
 
-            assignHousekeepingTask(myConnection);
+            //viewCleaningScheduleById(myConnection);
             System.out.println("Trying close connection");
             myConnection.close();
             System.out.println("Closed connection byebye");
@@ -126,7 +126,6 @@ public class Main {
             }
         }
 
-
         System.out.println("Enter the scheduled date (yyyy-mm-dd):");
         String scheduleDate = in.nextLine();
 
@@ -169,7 +168,7 @@ public class Main {
         System.out.println("Task assigned successfully to housekeeping staff.");
     }
 
-    private static void viewMyCleaningSchedule(Connection myConnection) throws SQLException {
+    private static void viewCleaningScheduleById(Connection myConnection) throws SQLException {
         System.out.println("Now executing viewMyCleaningSchedule");
         Scanner in = new Scanner(System.in);
 
