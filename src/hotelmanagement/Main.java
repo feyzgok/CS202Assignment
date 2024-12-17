@@ -6,15 +6,32 @@ import java.util.*;
 import java.util.Date;
 
 /*Bunların hepsine yarın sql yazılıp kontrol edilecek: todo first
-            – View All Housekeeping Records
-            – Assign Housekeeping Task
-            – View All Housekeepers Records and Their Availability
-            – View Pending Housekeeping Tasks
-            – View Completed Housekeeping Tasks
-            – Update Task Status to Completed
             – View My Cleaning Schedule
-
  */
+
+
+
+//addRoom için 1. SQL ihtiyacım bu:
+/* INSERT INTO public.roomtype (price, type_Name, numPeople) VALUES(0, '', 0);
+ *
+ * room için sql:
+ * INSERT INTO public.room (id, name, type_name, hotel_id) VALUES(0, '', '', 0);
+ * */
+
+    /* booking ve cleaning status yapılacak önce
+    private static void manageRoomStatus(Connection myConnection) throws SQLException {
+        System.out.println("Now executing manageRoomStatus");
+        Scanner in = new Scanner(System.in);
+
+        System.out.println("Please enter the hotel ID");
+        System.out.println("Please enter the");
+
+        --user type'a göre değişik menüler gösterecek
+        1.check in
+        2.check out--receptionist de yapabilir
+        3.mark room for cleaning
+        4.make payment
+    }*/
 
 public class Main {
 //TODO:newID eklenirken auto increment olacak--yarının ikinci işi
@@ -27,22 +44,16 @@ public class Main {
 
     public static void main(String[] args) {
 
-//bütün sql'ları sıra sıra yazıp sonradan functiona çevir
-//kimse commit yapmasın bitirene kadar
-        //bunun üzerine sadece kendi fonksiyonlarınızı ekleyin en son ikiniz birbirinizi override yapmaman için
-//fonksiyonlar bittiğinde user interface'ını (menüyü) ekleyebiliriz
-
         try {
             System.out.println("Trying to establish Connection by using DBConnector");
             Connection myConnection = DriverManager.getConnection("jdbc:mysql://localhost:3306/public", "root", "password");
             System.out.println("Connected successfully,catalog name equals " + myConnection.getCatalog());
 
-
             //addNewHotel(myConnection);
             //viewAllHotels(myConnection);
             //updateHotel(myConnection);
             //deleteHotel(myConnection);
-
+            viewAllEmployeeswithTheirRoles(myConnection);
             //addNewRoom(myConnection);
             //deleteRoom(myConnection);
             //addNewUser(myConnection);
@@ -51,17 +62,17 @@ public class Main {
             //checkRoomById(myConnection);
             //viewAllUsers(myConnection);
             //viewTypeOfUserById(myConnection);
+            //viewPendingHousekeepingTasks(myConnection);
 
-            //???viewAllEmployeeswithTheirRole(myConnection);
+           //???viewAllEmployeeswithTheirRole(myConnection);
 
-
-
+            //viewAllHousekeepingRecords(myConnection);
+            //viewAllHousekeepingSchedules(myConnection);
             //showAllRoomsByHotelId(myConnection);
 
             //addNewGuest(myConnection);
             //deleteGuest(myConnection);
             //viewAllGuests(myConnection);
-            viewAllHousekeepersRecordsAndAvailability(myConnection);
 
             System.out.println("Trying close connection");
             myConnection.close();
@@ -73,53 +84,63 @@ public class Main {
         }
     }
 
-    // Method to view all housekeepers and their availability
-    //TODO:availability için ekstra column mı eklemek lazım nasıl olacak bu iş düşün
-    private static void viewAllHousekeepersRecordsAndAvailability(Connection myConnection) throws SQLException {
-        System.out.println("Now executing viewAllHousekeepersRecordsAndAvailability");
-        String sql = "SELECT hs.id AS housekeeper_id, e.id AS employee_id, u.name, u.surname, " +
-                "CASE WHEN EXISTS (" +
-                "    SELECT 1 FROM public.housekeeping_schedule hsched " +
-                "    WHERE hsched.housekeeping_staff_id = hs.id AND hsched.cleaning_status = 'Pending'" +
-                ") THEN 'Not Available' ELSE 'Available' END AS availability " +
-                "FROM public.housekeeping_staff hs " +
-                "JOIN public.employee e ON hs.employee_id = e.id " +
+    // Method to view all employees with their roles
+    private static void viewAllEmployeeswithTheirRoles(Connection myConnection) throws SQLException {
+        System.out.println("Now executing viewAllEmployeeswithTheirRole");
+        String sql = "SELECT e.id AS employee_id, u.name, u.surname, " +
+                "CASE " +
+                "    WHEN EXISTS (SELECT 1 FROM public.housekeeping_staff hs WHERE hs.employee_id = e.id) THEN 'Housekeeper' " +
+                "    WHEN EXISTS (SELECT 1 FROM public.receptionist r WHERE r.employee_id = e.id) THEN 'Receptionist' " +
+                "    WHEN EXISTS (SELECT 1 FROM public.admin a WHERE a.employee_id = e.id) THEN 'Admin' " +
+                "    ELSE 'Unknown' " +
+                "END AS role " +
+                "FROM public.employee e " +
                 "JOIN public.user u ON e.user_id = u.id;";
 
         PreparedStatement prep_statement = myConnection.prepareStatement(sql);
         ResultSet rs = prep_statement.executeQuery();
 
-        System.out.println("Housekeeper ID | Employee ID | Name | Surname | Availability");
+        System.out.println("Employee ID | Name | Surname | Role");
         while (rs.next()) {
             System.out.println(
-                    rs.getInt("housekeeper_id") + " | " +
-                            rs.getInt("employee_id") + " | " +
+                    rs.getInt("employee_id") + " | " +
                             rs.getString("name") + " | " +
                             rs.getString("surname") + " | " +
-                            rs.getString("availability")
+                            rs.getString("role")
+            );
+        }
+    }
+
+    // Method to view all housekeepers and their availability
+    //TODO:availability için ekstra column mı eklemek lazım nasıl olacak bu iş düşün
+    private static void viewAllHousekeepersRecordsAndAvailability(Connection myConnection) throws SQLException {
+        System.out.println("Now executing viewAllHousekeepersRecordsAndAvailability");
+        String sql = "SELECT hs.id AS housekeeper_id, e.id AS employee_id, u.name, u.surname, CASE WHEN EXISTS ( SELECT 1 FROM public.housekeeping_schedule hsched WHERE hsched.housekeeping_staff_id = hs.id AND hsched.cleaning_status = 'Pending') THEN 'Not Available' ELSE 'Available' END AS availability FROM public.housekeeping_staff hs JOIN public.employee e ON hs.employee_id = e.id JOIN public.user u ON e.user_id = u.id;";
+
+        PreparedStatement prep_statement = myConnection.prepareStatement(sql);
+        ResultSet rs = prep_statement.executeQuery();
+
+        while (rs.next()) {
+            System.out.println(
+                    "Housekeeper ID" + rs.getInt("housekeeper_id") + " | " +
+                    "Employee ID " +  rs.getInt("employee_id") + " | " +
+                    "Name" + rs.getString("name") + " | " +
+                    "Surname" + rs.getString("surname") + " | " +
+                    "Availability" + rs.getString("availability")
             );
         }
     }
 
     // Method to view all housekeepers
-    private static void viewAllHousekeepersRecords(Connection myConnection) throws SQLException {
-        System.out.println("Now executing viewAllHousekeepersRecordsAndAvailability");
-        String sql = "SELECT hs.id AS housekeeper_id, e.id AS employee_id, u.name, u.surname, hs.id AS housekeeping_staff_id " +
-                "FROM public.housekeeping_staff hs " +
-                "JOIN public.employee e ON hs.employee_id = e.id " +
-                "JOIN public.user u ON e.user_id = u.id;";
+    private static void viewAllHousekeepingRecords(Connection myConnection) throws SQLException {
+        System.out.println("Now executing viewAllHousekeepingRecords");
+        String sql = "SELECT  public.housekeeping_staff.id AS housekeeper_id, public.employee.id AS employee_id, public.`user`.name, public.`user`.surname,  public.housekeeping_staff.id AS housekeeping_staff_id FROM public.housekeeping_staff JOIN public.employee ON public.housekeeping_staff.employee_id =  public.employee.id JOIN public.`user` ON  public.employee.user_id = public.`user`.id ;";
 
         PreparedStatement prep_statement = myConnection.prepareStatement(sql);
         ResultSet rs = prep_statement.executeQuery();
 
-        System.out.println("Housekeeper ID | Employee ID | Name | Surname");
         while (rs.next()) {
-            System.out.println(
-                    rs.getInt("housekeeper_id") + " | " +
-                            rs.getInt("employee_id") + " | " +
-                            rs.getString("name") + " | " +
-                            rs.getString("surname")
-            );
+            System.out.println("Housekeeper ID:" + rs.getInt("housekeeper_id") + " | " + "Employee ID:" + rs.getInt("employee_id") + " | " + "Name:" + rs.getString("name") + " | " + "Surname:" + rs.getString("surname"));
         }
     }
 
@@ -170,6 +191,26 @@ public class Main {
         System.out.println("Housekeeping schedule created successfully.");
     }
 
+    // Method to update an existing housekeeping schedule to completed directly
+    private static void updateHousekeepingScheduleToComplete(Connection myConnection) throws SQLException {
+        System.out.println("Now executing updateHousekeepingSchedule");
+        Scanner in = new Scanner(System.in);
+
+        System.out.println("Enter the schedule ID to update:");
+        int scheduleId = in.nextInt();
+        in.nextLine();
+
+        String cleaningStatus = "Completed" ;
+
+        String sql = "UPDATE public.housekeeping_schedule SET cleaning_status = ? WHERE id = ?;";
+        PreparedStatement prep_statement = myConnection.prepareStatement(sql);
+        prep_statement.setString(1, cleaningStatus);
+        prep_statement.setInt(2, scheduleId);
+
+        prep_statement.executeUpdate();
+        System.out.println("Housekeeping schedule updated successfully.");
+    }
+
     // Method to update an existing housekeeping schedule
     private static void updateHousekeepingSchedule(Connection myConnection) throws SQLException {
         System.out.println("Now executing updateHousekeepingSchedule");
@@ -216,22 +257,20 @@ public class Main {
         System.out.println("Housekeeping schedule deleted successfully.");
     }
 
-    // Method to view all housekeeping records
-    private static void viewAllHousekeepingRecords(Connection myConnection) throws SQLException {
-        System.out.println("Now executing viewAllHousekeepingRecords");
+    // Method to view all housekeeping schedule records
+    private static void viewAllHousekeepingSchedules(Connection myConnection) throws SQLException {
+        System.out.println("Now executing viewAllHousekeepingSchedule");
         String sql = "SELECT * FROM public.housekeeping_schedule;";
         PreparedStatement prep_statement = myConnection.prepareStatement(sql);
         ResultSet rs = prep_statement.executeQuery();
 
-        System.out.println("ID | Room ID | Staff ID | Schedule Date | Cleaning Status | Receptionist ID");
         while (rs.next()) {
-            System.out.println(
-                    rs.getInt("id") + " | " +
-                            rs.getInt("room_id") + " | " +
-                            rs.getInt("housekeeping_staff_id") + " | " +
-                            rs.getDate("scheduledate") + " | " +
-                            rs.getString("cleaning_status") + " | " +
-                            rs.getInt("receptionist_id")
+            System.out.println("ID:"+ rs.getInt("id") + " | "
+                    + "Room ID:" + rs.getInt("room_id") + " | "
+                    + "Staff ID:" + rs.getInt("housekeeping_staff_id") + " | "
+                    + "Schedule Date:" + rs.getDate("scheduledate") + " | "
+                    + "Cleaning status" + rs.getString("cleaning_status") + " | "
+                    + "Receptionist ID:" + rs.getInt("receptionist_id")
             );
         }
     }
@@ -243,14 +282,12 @@ public class Main {
         PreparedStatement prep_statement = myConnection.prepareStatement(sql);
         ResultSet rs = prep_statement.executeQuery();
 
-        System.out.println("ID | Room ID | Staff ID | Schedule Date | Receptionist ID");
         while (rs.next()) {
-            System.out.println(
-                    rs.getInt("id") + " | " +
-                            rs.getInt("room_id") + " | " +
-                            rs.getInt("housekeeping_staff_id") + " | " +
-                            rs.getDate("scheduledate") + " | " +
-                            rs.getInt("receptionist_id")
+            System.out.println( "ID:" + rs.getInt("id") + " | " +
+                            "Room ID:" + rs.getInt("room_id") + " | " +
+                            "Staff ID:" +rs.getInt("housekeeping_staff_id") + " | " +
+                            "Schedule Date:" + rs.getDate("scheduledate") + " | " +
+                            "Receptionist ID:" + rs.getInt("receptionist_id")
             );
         }
     }
@@ -291,30 +328,6 @@ public class Main {
             );
         }
     }
-
-
-    //addRoom için 1. SQL ihtiyacım bu:
-   /* INSERT INTO public.roomtype (price, type_Name, numPeople) VALUES(0, '', 0);
-   *
-   * room için sql:
-   * INSERT INTO public.room (id, name, type_name, hotel_id) VALUES(0, '', '', 0);
-   * */
-
-    /* booking ve cleaning status yapılacak önce
-    private static void manageRoomStatus(Connection myConnection) throws SQLException {
-        System.out.println("Now executing manageRoomStatus");
-        Scanner in = new Scanner(System.in);
-
-        System.out.println("Please enter the hotel ID");
-        System.out.println("Please enter the");
-
-        --user type'a göre değişik menüler gösterecek
-        1.check in
-        2.check out--receptionist de yapabilir
-        3.mark room for cleaning
-        4.make payment
-    }*/
-
 
     private static void addNewAdmin(Connection myConnection, int admin_employeeId) throws SQLException {
         System.out.println("Now executing addNewAdmin");
