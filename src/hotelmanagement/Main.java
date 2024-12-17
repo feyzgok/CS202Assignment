@@ -42,6 +42,11 @@ public class Main {
             //viewPendingHousekeepingTasks(myConnection);
             //viewAllEmployeeswithTheirRoles(myConnection);
             //viewAllHousekeepingRecords(myConnection);
+            //viewHousekeepingAvailabilityForTodayByHousekeepingId(myConnection);
+            viewHousekeepingAvailabilityByHousekeepingId(myConnection);
+
+            //?viewAllHousekeepersRecordsAndAvailability(myConnection);
+
             //viewAllHousekeepingSchedules(myConnection);
             //showAllRoomsByHotelId(myConnection);
             //checkHousekeepingStaffById(myConnection);
@@ -49,8 +54,8 @@ public class Main {
             //deleteGuest(myConnection);
             //viewAllGuests(myConnection);
 
-            viewCleaningScheduleById(myConnection);
-            viewHousekeepingScheduleByHousekeepingScheduleId(myConnection);
+            //viewCleaningScheduleById(myConnection);
+            //viewHousekeepingScheduleByHousekeepingScheduleId(myConnection);
             System.out.println("Trying close connection");
             myConnection.close();
             System.out.println("Closed connection byebye");
@@ -220,7 +225,7 @@ public class Main {
 
 
     // Method to view all housekeepers and their availability
-    //TODO:availability için ekstra column mı eklemek lazım nasıl olacak bu iş düşün
+    //TODO:availability için ekstra column mı eklemek lazım nasıl olacak bu işi düşün
     private static void viewAllHousekeepersRecordsAndAvailability(Connection myConnection) throws SQLException {
         System.out.println("Now executing viewAllHousekeepersRecordsAndAvailability");
         String sql = "SELECT hs.id AS housekeeper_id, e.id AS employee_id, u.name, u.surname, CASE WHEN EXISTS ( SELECT 1 FROM public.housekeeping_schedule hsched WHERE hsched.housekeeping_staff_id = hs.id AND hsched.cleaning_status = 'Pending') THEN 'Not Available' ELSE 'Available' END AS availability FROM public.housekeeping_staff hs JOIN public.employee e ON hs.employee_id = e.id JOIN public.user u ON e.user_id = u.id;";
@@ -230,13 +235,76 @@ public class Main {
 
         while (rs.next()) {
             System.out.println(
-                    "Housekeeper ID" + rs.getInt("housekeeper_id") + " | " +
-                    "Employee ID " +  rs.getInt("employee_id") + " | " +
-                    "Name" + rs.getString("name") + " | " +
-                    "Surname" + rs.getString("surname") + " | " +
-                    "Availability" + rs.getString("availability")
+                    "Housekeeper ID:" + rs.getInt("housekeeper_id") + " | " +
+                    "Employee ID: " +  rs.getInt("employee_id") + " | " +
+                    "Name:" + rs.getString("name") + " | " +
+                    "Surname:" + rs.getString("surname") + " | " +
+                    "Availability:" + rs.getString("availability")
             );
         }
+    }
+
+
+
+    private static void viewHousekeepingAvailabilityForTodayByHousekeepingId(Connection myConnection) throws SQLException {
+        System.out.println("Now executing viewAllHousekeepingAvailability");
+
+        Scanner in = new Scanner(System.in);
+        System.out.println("Enter housekeeper ID:");
+        int housekeeperId = in.nextInt();
+        in.nextLine();
+
+        PreparedStatement prep_statement = myConnection.prepareStatement("select sh.id, sh.housekeeping_staff_id, sh.cleaning_status, sh.scheduledate from public.housekeeping_schedule sh join public.housekeeping_staff hs on hs.id = sh.housekeeping_staff_id where hs.id = ?;");
+        prep_statement.setInt(1,housekeeperId);
+        ResultSet rs = prep_statement.executeQuery();
+        String state = "";
+        String date = "";
+
+        if (rs.next()) {
+            state = rs.getString("cleaning_status");
+            date = rs.getString("scheduledate");
+        }
+
+        java.sql.Date current = java.sql.Date.valueOf(LocalDate.now());
+
+        String availability = "Available";
+        if (state.equals("Pending") && current.equals(date) ) {
+            availability = "Not Available for today";
+        }
+
+        System.out.println(availability);
+    }
+    // Method to view housekeeping availability by housekeeping staff ID
+    private static void viewHousekeepingAvailabilityByHousekeepingId(Connection myConnection) throws SQLException {
+        System.out.println("Now executing viewHousekeepingAvailabilityByHousekeepingId");
+
+        Scanner in = new Scanner(System.in);
+        System.out.println("Enter housekeeper ID:");
+        int housekeeperId = in.nextInt();
+        in.nextLine();
+
+        java.sql.Date inputtime = java.sql.Date.valueOf(LocalDate.now());
+
+        String sql = "SELECT sh.cleaning_status, sh.scheduledate FROM public.housekeeping_schedule sh JOIN public.housekeeping_staff hs ON hs.id = sh.housekeeping_staff_id WHERE hs.id = ?;";
+
+        PreparedStatement prep_statement = myConnection.prepareStatement(sql);
+        prep_statement.setInt(1, housekeeperId);
+        ResultSet rs = prep_statement.executeQuery();
+
+        java.sql.Date currentDate = java.sql.Date.valueOf(LocalDate.now());
+        String availability = "Available";
+
+        while (rs.next()) {
+            String cleaningStatus = rs.getString("cleaning_status");
+            java.sql.Date scheduledDate = rs.getDate("scheduledate");
+
+            if ("Pending".equals(cleaningStatus) && currentDate.equals(scheduledDate)) {
+                availability = "Not Available right now";
+                break;
+            }
+        }
+
+        System.out.println("Housekeeper Availability: " + availability);
     }
 
     // Method to view all housekeepers
