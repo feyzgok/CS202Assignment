@@ -6,29 +6,9 @@ import java.sql.*;
 import java.time.*;
 import java.util.*;
 import java.util.Date;
+
 //TODO:DELETE USER
-
-//addRoom için 1. SQL ihtiyacım bu:
-/* INSERT INTO public.roomtype (price, type_Name, numPeople) VALUES(0, '', 0);
- *
- * room için sql:
- * INSERT INTO public.room (id, name, type_name, hotel_id) VALUES(0, '', '', 0);
- * */
-
-    /* booking ve cleaning status yapılacak önce
-    private static void manageRoomStatus(Connection myConnection) throws SQLException {
-        System.out.println("Now executing manageRoomStatus");
-        Scanner in = new Scanner(System.in);
-
-        System.out.println("Please enter the hotel ID");
-        System.out.println("Please enter the");
-
-        --user type'a göre değişik menüler gösterecek
-        1.check in
-        2.check out--receptionist de yapabilir
-        3.mark room for cleaning
-        4.make payment
-    }*/
+//todo:check assignhousekeeping by receptionist
 
 public class Main {
 //TODO:newID eklenirken auto increment olacak--yarının ikinci işi
@@ -37,7 +17,6 @@ public class Main {
     //bir tane main functionda global static variable tut:current user static type--herkes içindekini okuyabilir
     //login yapıldıktan sonra
     //user type neye eşitse fonksiyonlara girmek istediğinde kontrol et--if currentUser==user gibisinden
-
 
     public static void main(String[] args) {
 
@@ -70,7 +49,8 @@ public class Main {
             //deleteGuest(myConnection);
             //viewAllGuests(myConnection);
 
-            //viewCleaningScheduleById(myConnection);
+            viewCleaningScheduleById(myConnection);
+            viewHousekeepingScheduleByHousekeepingScheduleId(myConnection);
             System.out.println("Trying close connection");
             myConnection.close();
             System.out.println("Closed connection byebye");
@@ -80,7 +60,6 @@ public class Main {
             System.out.println(e.getMessage());
         }
     }
-
 
     // Method for receptionist to assign housekeeping tasks
     private static void assignHousekeepingTask(Connection myConnection) throws SQLException {
@@ -172,14 +151,15 @@ public class Main {
         System.out.println("Now executing viewMyCleaningSchedule");
         Scanner in = new Scanner(System.in);
 
-        System.out.println("Enter your Housekeeper ID:");
-        int housekeepingStaffId = in.nextInt();
+        System.out.println("Enter your Housekeeping Schduel ID:");
+        int housekeepingScheduleId = in.nextInt();
         in.nextLine();
+        //todo:burada housekeeping id alınıp housekeeping schedule id bulunup sonra sql'de schedule id konulmalı
 
         String sql = "SELECT hs.id, hs.room_id, hs.scheduledate, hs.cleaning_status, r.name AS room_name FROM public.housekeeping_schedule hs JOIN public.room r ON hs.room_id = r.id WHERE hs.housekeeping_staff_id = ? AND hs.cleaning_status = 'Pending' ORDER BY hs.scheduledate;";
 
         PreparedStatement prep_statement = myConnection.prepareStatement(sql);
-        prep_statement.setInt(1, housekeepingStaffId);
+        prep_statement.setInt(1, housekeepingScheduleId);
         ResultSet rs = prep_statement.executeQuery();
 
         while (rs.next()) {
@@ -191,7 +171,6 @@ public class Main {
             );
         }
     }
-
 
     // Method for housekeeping staff to view their cleaning schedule
     //bu userın sadece sıra sıra room idlerini ve daha sonra datelerini date'leri order by ile orderlanıp gösterilebilinir
@@ -209,14 +188,12 @@ public class Main {
         prep_statement.setInt(1, housekeepingStaffId);
         ResultSet rs = prep_statement.executeQuery();
 
-        System.out.println("Schedule ID | Room ID | Room Name | Schedule Date | Cleaning Status");
         while (rs.next()) {
-            System.out.println(
-                    rs.getInt("id") + " | " +
-                            rs.getInt("room_id") + " | " +
-                            rs.getString("room_name") + " | " +
-                            rs.getDate("scheduledate") + " | " +
-                            rs.getString("cleaning_status")
+            System.out.println( "Housekeeping Schedule ID:" + rs.getInt("id") + " | " +
+                           "Room ID:" + rs.getInt("room_id") + " | " +
+                            " Room Name:" + rs.getString("room_name") + " | " +
+                            "Schedule Date:" + rs.getDate("scheduledate") + " | " +
+                            "Cleaning Status:" + rs.getString("cleaning_status")
             );
         }
     }
@@ -1289,7 +1266,5 @@ public class Main {
         prep_statement.setInt(1, hotelId);
         prep_statement.executeUpdate();
     }
-
-
 
 }
