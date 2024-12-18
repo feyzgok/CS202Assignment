@@ -259,8 +259,7 @@ public class Main {
                     viewRoomStatus(conn);
                     break;
                 case 2:
-                    // Add update room cleaning status functionality
-                    System.out.println("Room cleaning status update functionality to be implemented.");
+                    deleteHousekeepingSchedule(conn);
                     break;
                 case 3:
                     viewScheduleIdByHousekeepingId(conn);
