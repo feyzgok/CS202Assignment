@@ -3,7 +3,7 @@ package hotelmanagement;
 import java.sql.*;
 import java.time.*;
 import java.util.*;
-import java.util.Date;
+import java.sql.Date;
 
 
 public class Main {
@@ -21,6 +21,8 @@ public class Main {
             Connection myConnection = DriverManager.getConnection("jdbc:mysql://localhost:3306/public", "root", "password");
             System.out.println("Connected successfully,catalog name equals " + myConnection.getCatalog());
 
+            addNewBooking(myConnection);
+            //viewAllAvailableRoomsByHotelIdForPeriod0(myConnection);
             //addNewHotel(myConnection);
             //viewAllHotels(myConnection);
             //updateHotel(myConnection);
@@ -61,6 +63,250 @@ public class Main {
             System.out.println(e.getMessage());
         }
     }
+
+
+    private static void addNewBooking(Connection myConnection) throws SQLException {
+        Scanner scanner = new Scanner(System.in);
+        System.out.println("addNewBooking is starting...");
+
+        // Step 1: Enter Guest ID
+        System.out.println("Enter your Guest ID:");
+        int guestId = scanner.nextInt();
+        scanner.nextLine(); // Consume newline
+
+        // Check if the guest exists
+        if (!checkGuestExists(myConnection, guestId)) {
+            System.out.println("Guest with ID " + guestId + " does not exist. Please register the guest first.");
+            return;
+        }
+
+        // Step 2: Enter Booking Period
+        System.out.println("Please enter the start date of booking (YYYY-MM-DD):");
+        String startDateInput = scanner.next();
+        Date startDate = Date.valueOf(LocalDate.parse(startDateInput));
+
+        System.out.println("Please enter the end date of booking (YYYY-MM-DD):");
+        String endDateInput = scanner.next();
+        Date endDate = Date.valueOf(LocalDate.parse(endDateInput));
+
+        // Step 3: Number of Rooms
+        System.out.println("How many rooms do you need?");
+        int numberOfRooms = scanner.nextInt();
+        scanner.nextLine(); // Consume newline
+
+        // Step 4: Loop to book each room
+        for (int i = 0; i < numberOfRooms; i++) {
+            // Display available rooms for the given period
+            viewAllAvailableRoomsOfAllHotelsForPeriod(myConnection, startDate, endDate);
+
+            System.out.println("Enter the Room ID you want to book:");
+            int roomId = scanner.nextInt();
+            scanner.nextLine(); // Consume newline
+
+            // Insert booking into the database
+            String sql = "INSERT INTO public.booking (startdate, enddate, bookingstatus, room_id, guest_id) " +
+                    "VALUES (?, ?, 'pending approval', ?, ?);";
+
+            PreparedStatement prep_statement = myConnection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+            prep_statement.setDate(1, startDate);
+            prep_statement.setDate(2, endDate);
+            prep_statement.setInt(3, roomId);
+            prep_statement.setInt(4, guestId);
+
+            int affectedRows = prep_statement.executeUpdate();
+
+            if (affectedRows > 0) {
+                ResultSet generatedKeys = prep_statement.getGeneratedKeys();
+                if (generatedKeys.next()) {
+                    int bookingId = generatedKeys.getInt(1);
+                    System.out.println("Booking successful! Booking ID: " + bookingId);
+                }
+            } else {
+                System.out.println("Booking failed. Please try again.");
+            }
+        }
+    }
+
+    // Helper Method to Check if Guest Exists
+    private static boolean checkGuestExists(Connection myConnection, int guestId) throws SQLException {
+        String checkGuestSql = "SELECT 1 FROM public.guest WHERE id = ?";
+        PreparedStatement checkGuestStatement = myConnection.prepareStatement(checkGuestSql);
+        checkGuestStatement.setInt(1, guestId);
+
+        ResultSet rs = checkGuestStatement.executeQuery();
+        return rs.next();
+    }
+
+    private static void viewAllAvailableRoomsByHotelIdForPeriod(Connection myConnection) throws SQLException {
+        System.out.println("Now executing viewAllAvailableRoomsByHotelIdForPeriod");
+
+        Scanner scanner = new Scanner(System.in);
+
+        // Get hotel ID and date range from the user
+        System.out.println("Enter hotel ID:");
+        int hotelId = scanner.nextInt();
+        scanner.nextLine(); // Consume newline
+
+        System.out.println("Enter start date (YYYY-MM-DD):");
+        Date startDate = Date.valueOf(scanner.nextLine());
+
+        System.out.println("Enter end date (YYYY-MM-DD):");
+        Date endDate = Date.valueOf(scanner.nextLine());
+
+        // SQL query to check rooms that are available by combining housekeeping and booking checks
+        String sql = "SELECT r.id, r.name, r.type_name, r.hotel_id FROM public.room r WHERE r.hotel_id = ? AND NOT EXISTS (SELECT 1 FROM public.housekeeping_schedule hs WHERE hs.room_id = r.id AND hs.cleaning_status = 'Pending' AND hs.scheduledate BETWEEN ? AND ?) AND NOT EXISTS (SELECT 1 FROM public.booking b WHERE b.room_id = r.id AND b.startdate <= ? AND b.enddate >= ? AND b.bookingstatus NOT IN ('cancelled by guest', 'cancelled by admin'));";
+
+        // Prepare the SQL statement
+        PreparedStatement prep_statement = myConnection.prepareStatement(sql);
+        prep_statement.setInt(1, hotelId);
+        prep_statement.setDate(2, startDate);
+        prep_statement.setDate(3, endDate);
+        prep_statement.setDate(4, endDate);
+        prep_statement.setDate(5, startDate);
+
+        // Execute the query
+        ResultSet rs = prep_statement.executeQuery();
+
+        // Print the available rooms
+        boolean found = false;
+        while (rs.next()) {
+            found = true;
+            System.out.println("Room ID: " + rs.getInt("id") +
+                    ", Name: " + rs.getString("name") +
+                    ", Type: " + rs.getString("type_name"));
+        }
+
+        if (!found) {
+            System.out.println("No available rooms found for the given period and hotel ID.");
+        }
+    }
+
+    private static void viewAllAvailableRoomsOfAllHotelsForPeriod(Connection myConnection, java.sql.Date startDateIn, java.sql.Date endDateIn) throws SQLException {
+        System.out.println("Now executing viewAllAvailableRoomsOfAllHotelsForPeriod");
+        Date startDate = startDateIn;
+        Date endDate = endDateIn;
+
+        // Corrected SQL query
+        String sql = "SELECT r.id, r.name, r.type_name, r.hotel_id " +
+                "FROM public.room r " +
+                "WHERE NOT EXISTS ( " +
+                "    SELECT 1 FROM public.housekeeping_schedule hs " +
+                "    WHERE hs.room_id = r.id " +
+                "    AND hs.cleaning_status = 'Pending' " +
+                "    AND hs.scheduledate BETWEEN ? AND ? " +
+                ") " +
+                "AND NOT EXISTS ( " +
+                "    SELECT 1 FROM public.booking b " +
+                "    WHERE b.room_id = r.id " +
+                "    AND b.startdate <= ? " +
+                "    AND b.enddate >= ? " +
+                "    AND b.bookingstatus NOT IN ('cancelled by guest', 'cancelled by admin') " +
+                ");";
+
+        // Prepare the SQL statement
+        PreparedStatement prep_statement = myConnection.prepareStatement(sql);
+        prep_statement.setDate(1, startDate);
+        prep_statement.setDate(2, endDate);
+        prep_statement.setDate(3, endDate);
+        prep_statement.setDate(4, startDate);
+
+        // Execute the query
+        ResultSet rs = prep_statement.executeQuery();
+
+        // Print the available rooms
+        boolean found = false;
+        while (rs.next()) {
+            found = true;
+            System.out.println("Room ID: " + rs.getInt("id") +
+                    ", Name: " + rs.getString("name") +
+                    ", Type: " + rs.getString("type_name") +
+                    ", Hotel ID: " + rs.getInt("hotel_id"));
+        }
+
+        if (!found) {
+            System.out.println("No available rooms found for the given period.");
+        }
+    }
+
+        /*
+        ben kalırken odayı temizlemeye gelemezler
+        tam tersi şekilde
+        eğer ben kalmaya geleceksem o oda ben gelmeden booklanmışsa da temizlenmeli
+        eğer booklanmamışsa sıkıntı yok
+
+        fun1;
+        housekeeping scheduledan pending olan tum odalari cek
+        bu pending olan odalardan biri kendisi mi
+        eger kendisiyse scheduleDateinin verilen start dateden en az bir gun once  lazim
+        çünkü önce gidenin ardından sonra kendisinin önünden temizlik yapılacak toplamda 2 temizlik şart desek de gerçek hayatta tek temizlik yeterli
+
+intersect
+
+        func2;
+        booking tablosundan tum bookingleri cek
+        bu bookinglerden herhangi birinin start dateinin verilen enddateden once olmamasi ve
+        bookingin end dateinin verilen startdateden sonra olmamasi sartini sagliyorsa o zaman diliminda bu oda bostur
+        Eger bossa true dondur bossa false dondur
+         */
+
+    private static void viewNotBookedRoomsForGivenPeriod(Connection myConnection, Date startDate, Date endDate) throws SQLException {
+        System.out.println("Executing viewNotBookedRoomsForGivenPeiod");
+        String sql = "SELECT id, name, type_name, hotel_id FROM public.room where not exists (SELECT room_id FROM public.booking where startdate <= ? or enddate >= ? AND bookingstatus NOT IN ('cancelled by guest', 'cancelled by admin'))";
+        PreparedStatement room_preparedStatement = myConnection.prepareStatement(sql);
+        room_preparedStatement.setDate(1, endDate);
+        room_preparedStatement.setDate(2, startDate);
+        /*
+        booking tablosundan tum bookingleri cek
+        (eğer bitişinden önce başlıyorsam veya başlangıcımdan önce bitmiyorsa benimle çakışıyordur)
+        bu bookinglerden herhangi birinin start dateinin verilen enddateden once olmamasi ve
+        bookingin end dateinin verilen startdateden sonra olmamasi sartini sagliyorsa o zaman diliminda bu oda bostur
+        */
+
+        ResultSet rs = room_preparedStatement.executeQuery();
+
+        while (rs.next()) {
+            System.out.println("ID: " + rs.getInt("id") +
+                    ", Name: " + rs.getString("name") +
+                    ", Type: " + rs.getString("type_name"));
+        }
+    }
+
+    private static void viewCleanRoomsForGivenPeriod(Connection myConnection, Date startDate, Date endDate) throws SQLException {
+        System.out.println("Now executing viewCleanRoomsForGivenPeriod");
+
+        String clean_sql = "SELECT id, name, type_name, hotel_id FROM public.room where not exists (SELECT room_id FROM public.housekeeping_schedule where public.housekeeping_schedule.cleaning_status =\"Pending\" and public.housekeeping_schedule.scheduledate >= ? and public.housekeeping_schedule.scheduledate <= ?);";
+        PreparedStatement clean_preparedStatement = myConnection.prepareStatement(clean_sql);
+        clean_preparedStatement.setDate(1, startDate);
+        clean_preparedStatement.setDate(2,endDate);
+        ResultSet cs = clean_preparedStatement.executeQuery();
+        while (cs.next()) {
+            System.out.println("ID: " + cs.getInt("id") +
+                    ", Name: " + cs.getString("name") +
+                    ", Type: " + cs.getString("type_name"));
+        }
+    }
+
+
+
+    private static void viewAllRoomsByHotelId(Connection myConnection) throws SQLException {
+        System.out.println("Now executing viewAvailableRooms");
+
+        System.out.println("Enter hotel id:");
+        Scanner scanner = new Scanner(System.in);
+
+        int hotelId = scanner.nextInt();
+        scanner.nextLine();
+
+        PreparedStatement prep_statement = myConnection.prepareStatement("SELECT public.room.id as room_id , public.room.name, public.room.room_type FROM public.room where public.room.hotel_Id = ?;");
+        prep_statement.setInt(1, hotelId);
+        ResultSet rs = prep_statement.executeQuery();
+
+        while (rs.next()) {
+            System.out.println("Room Id:" + rs.getInt("room_id") + "Name:" + rs.getString("name") + "Room_type: " + rs.getString("room_type"));
+        }
+
+    }
+
 
     // Method for receptionist to assign housekeeping tasks
     private static void assignHousekeepingTask(Connection myConnection) throws SQLException {
@@ -244,7 +490,6 @@ public class Main {
 
 
     // Method to view all housekeepers and their availability
-    //TODO:availability için ekstra column mı eklemek lazım nasıl olacak bu işi düşün
     private static void viewAllHousekeepersRecordsAndAvailability(Connection myConnection) throws SQLException {
         System.out.println("Now executing viewAllHousekeepersRecordsAndAvailability");
         String sql = "SELECT hs.id AS housekeeper_id, e.id AS employee_id, u.name, u.surname, CASE WHEN EXISTS ( SELECT 1 FROM public.housekeeping_schedule hsched WHERE hsched.housekeeping_staff_id = hs.id AND hsched.cleaning_status = 'Pending') THEN 'Not Available' ELSE 'Available' END AS availability FROM public.housekeeping_staff hs JOIN public.employee e ON hs.employee_id = e.id JOIN public.user u ON e.user_id = u.id;";
