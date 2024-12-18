@@ -45,7 +45,7 @@ public class Main {
             //viewHousekeepingAvailabilityByHousekeepingId(myConnection);
 
             //viewAllHousekeepersRecordsAndAvailability(myConnection);
-            assignHousekeepingTask(myConnection);
+            //assignHousekeepingTask(myConnection);
             //viewAllHousekeepingSchedules(myConnection);
             //showAllRoomsByHotelId(myConnection);
             //checkHousekeepingStaffById(myConnection);
@@ -769,8 +769,9 @@ public class Main {
     }
 
     //creates revenue report and adds to revenueReport table
+    //generate revenue report olarak kullanılır:
     private static void addNewRevenueReport(Connection myConnection) throws SQLException {
-        System.out.println("Now executing addNewRevenueReport");
+        System.out.println("Now executing addNewRevenueReport(generateRevenueReport)");
         Scanner in = new Scanner(System.in);
         System.out.println("enter the revenue ID");
         int id = in.nextInt();
@@ -786,10 +787,9 @@ public class Main {
         String endDateInput = in.next();
         Date endDate = java.sql.Date.valueOf(LocalDate.parse(endDateInput));
 
-
+//TODO:
     }
 
-    //YAPMASI RAHAT AMA ÖNCE DB DEĞİŞMELİ
     private static void addNewReceptionist(Connection myConnection, int receptionist_employeeId) throws SQLException {
         System.out.println("Now executing addNewReceptionist");
         Scanner in = new Scanner(System.in);
