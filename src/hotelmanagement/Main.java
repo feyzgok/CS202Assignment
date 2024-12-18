@@ -1,8 +1,5 @@
 package hotelmanagement;
 
-import com.mysql.cj.callback.MysqlCallback;
-
-import javax.xml.transform.Result;
 import java.sql.*;
 import java.time.*;
 import java.util.*;
