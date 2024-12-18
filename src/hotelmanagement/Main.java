@@ -1,12 +1,9 @@
 package hotelmanagement;
 
 import java.sql.*;
-import java.sql.Date;
-import java.util.ArrayList;
-import java.util.InputMismatchException;
-import java.util.Scanner;
 import java.time.*;
-
+import java.util.*;
+import java.sql.Date;
 
 
 public class Main {
@@ -1837,7 +1834,5 @@ intersect
         prep_statement.setInt(1, hotelId);
         prep_statement.executeUpdate();
     }
-
-
 
 }
