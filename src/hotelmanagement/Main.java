@@ -2,6 +2,7 @@ package hotelmanagement;
 
 import com.mysql.cj.callback.MysqlCallback;
 
+import javax.xml.transform.Result;
 import java.sql.*;
 import java.time.*;
 import java.util.*;
@@ -43,7 +44,7 @@ public class Main {
             //viewAllEmployeeswithTheirRoles(myConnection);
             //viewAllHousekeepingRecords(myConnection);
             //viewHousekeepingAvailabilityForTodayByHousekeepingId(myConnection);
-            viewHousekeepingAvailabilityByHousekeepingId(myConnection);
+            //viewHousekeepingAvailabilityByHousekeepingId(myConnection);
 
             //?viewAllHousekeepersRecordsAndAvailability(myConnection);
 
@@ -54,8 +55,11 @@ public class Main {
             //deleteGuest(myConnection);
             //viewAllGuests(myConnection);
 
-            //viewCleaningScheduleById(myConnection);
-            //viewHousekeepingScheduleByHousekeepingScheduleId(myConnection);
+            //deleteUser(myConnection);
+
+
+            //viewCleaningScheduleByHousekeepingId(myConnection);
+            //viewScheduleIdByHousekeepingId(myConnection);
             System.out.println("Trying close connection");
             myConnection.close();
             System.out.println("Closed connection byebye");
@@ -152,19 +156,44 @@ public class Main {
         System.out.println("Task assigned successfully to housekeeping staff.");
     }
 
-    private static void viewCleaningScheduleById(Connection myConnection) throws SQLException {
-        System.out.println("Now executing viewMyCleaningSchedule");
+
+    private static void viewScheduleIdByHousekeepingId(Connection myConnection) throws SQLException {
+        System.out.println("Now executing viewScheduleIdByHousekeepingId");
         Scanner in = new Scanner(System.in);
 
-        System.out.println("Enter your Housekeeping Schduel ID:");
-        int housekeepingScheduleId = in.nextInt();
+        System.out.println("Enter your Housekeeping ID:");
+        int housekeepingId = in.nextInt();
         in.nextLine();
-        //todo:burada housekeeping id alınıp housekeeping schedule id bulunup sonra sql'de schedule id konulmalı
+
+        PreparedStatement statement = myConnection.prepareStatement("SELECT sh.id FROM public.housekeeping_schedule sh join public.housekeeping_staff hs on hs.id = sh.housekeeping_staff_id where hs.id = ?;");
+        statement.setInt(1, housekeepingId);
+        ResultSet rs = statement.executeQuery();
+
+
+        if (rs.next()) {
+            System.out.println(rs.getInt("id"));
+        }
+
+        else{
+            System.out.println("There is no housekeeping schedule with that housekeeper ID.");
+        }
+
+    }
+
+
+    private static void viewCleaningScheduleByHousekeepingId(Connection myConnection) throws SQLException {
+        //burada sadece Pendingse listeliyoruz çünkü sadece bekleyen işlerini görmesinin kolaylık sağlayacağını düşündük
+        System.out.println("Now executing viewCleaningScheduleByHousekeepingId");
+        Scanner in = new Scanner(System.in);
+
+        System.out.println("Enter your Housekeeping ID:");
+        int housekeepingId = in.nextInt();
+        in.nextLine();
 
         String sql = "SELECT hs.id, hs.room_id, hs.scheduledate, hs.cleaning_status, r.name AS room_name FROM public.housekeeping_schedule hs JOIN public.room r ON hs.room_id = r.id WHERE hs.housekeeping_staff_id = ? AND hs.cleaning_status = 'Pending' ORDER BY hs.scheduledate;";
 
         PreparedStatement prep_statement = myConnection.prepareStatement(sql);
-        prep_statement.setInt(1, housekeepingScheduleId);
+        prep_statement.setInt(1, housekeepingId);
         ResultSet rs = prep_statement.executeQuery();
 
         while (rs.next()) {
@@ -765,7 +794,6 @@ public class Main {
 
     }
 
-    //TODO:BURCU'YA RECEPTIONIST VE HOUSEKEEPERLARA DA AD SOYAD VS. EKLESEK MI DIYE SOR !!!
     //YAPMASI RAHAT AMA ÖNCE DB DEĞİŞMELİ
     private static void addNewReceptionist(Connection myConnection, int receptionist_employeeId) throws SQLException {
         System.out.println("Now executing addNewReceptionist");
@@ -837,68 +865,6 @@ public class Main {
         }
     }
 
-
-    private static void addNewEmployee0(Connection myConnection, int employee_userId, int choice) throws SQLException {
-        System.out.println("Now executing addNewEmployee");
-        Scanner in = new Scanner(System.in);
-
-        int hotelId = 0;
-
-        String hotelSql;
-        PreparedStatement hotel_prep_statement ;
-        ResultSet rs = null;
-        
-        while (rs==null){
-            System.out.println("enter valid hotel id");
-            try{
-                hotelId = in.nextInt();
-                in.nextLine();
-            }
-            catch(Exception e){
-                System.out.println(e);
-            }
-
-
-            //System.out.println("hotelSql connect edemedilerimizdenmisiniz");
-            hotelSql = "SELECT id, address, name FROM public.hotel where public.hotel.id = ?;";
-            //System.out.println("hotelSql connect edilecek");
-            hotel_prep_statement = myConnection.prepareStatement(hotelSql);
-            hotel_prep_statement.setInt(1,hotelId);
-            //System.out.println("hotelSql connect edildi");
-            rs = hotel_prep_statement.executeQuery();
-            //System.out.println("hotelSql connect edilmiştir");
-            if(rs.next()){
-                System.out.println(rs.getInt("id"));
-                System.out.println("You are lucky. The hotel with given id is already existed");
-                break;
-            }
-            else{
-                System.out.println("There is no hotel with this id");
-                rs=null;
-            }
-        }
-
-        //System.out.println("fonksiyon kaldığı yerden devam ediyor...");
-        String sql ="INSERT INTO public.employee (id, user_id, hotel_id) VALUES(?, ?, ?);";
-        PreparedStatement prep_statement = myConnection.prepareStatement(sql);
-        System.out.println("Please enter the id for employee");
-        int id = in.nextInt();
-        in.nextLine();
-        prep_statement.setInt(1,id);
-        prep_statement.setInt(2,employee_userId);
-        prep_statement.setInt(3,hotelId);
-
-        prep_statement.executeUpdate();
-
-        switch (choice){
-            case 1:
-                addNewHousekeeper(myConnection, id);
-                break;
-            case 2:
-                addNewReceptionist(myConnection, id);
-        }
-    }
-
     private static void addNewGuest(Connection myConnection, String guest_name,  String guest_surname, int guest_userId) throws SQLException {
         System.out.println("Now executing addNewGuest");
         Scanner in = new Scanner(System.in);
@@ -958,6 +924,46 @@ public class Main {
         PreparedStatement prep_statement = myConnection.prepareStatement("DELETE FROM public.guest WHERE id= ?;");
         prep_statement.setInt(1, guestId);
         prep_statement.executeUpdate();
+    }
+    private static void deleteUser(Connection myConnection) throws SQLException {
+        System.out.println("Now executing deleteUser");
+        Scanner in = new Scanner(System.in);
+        System.out.println("Please enter user ID");
+        int userID= in.nextInt();
+        in.nextLine();
+        PreparedStatement prep_statement2 = myConnection.prepareStatement("SELECT type FROM public.user WHERE id= ?;");
+        prep_statement2.setInt(1, userID);
+        ResultSet rs= prep_statement2.executeQuery();
+
+        if (rs.next()){
+            if(!rs.getString("type").equals("admin")){
+                PreparedStatement prep_statement = myConnection.prepareStatement("DELETE FROM public.user WHERE id= ?;");
+                prep_statement.setInt(1, userID);
+                prep_statement.executeUpdate();
+            }
+            else {
+                System.out.println("User you want to delete is admin. Cannot delete user.");
+            }
+        }
+        else {
+            System.out.println("User with the specified ID does not exist.");
+        }
+
+
+    }
+
+    private static void deleteReceptionist(Connection myConnection) throws SQLException {
+        System.out.println("Now executing deleteReceptionist");
+        Scanner in = new Scanner(System.in);
+        System.out.println("Please enter the reception ID to delete");
+        int receptionId = in.nextInt();
+        in.nextLine();
+
+        PreparedStatement prep_statement = myConnection.prepareStatement("DELETE FROM public.reception WHERE id= ?;");
+        prep_statement.setInt(1, receptionId);
+        prep_statement.executeUpdate();
+
+        deleteHousekeepingSchedule(myConnection);
     }
 
     //idsi girilen USERIN BOOKLADIĞI ODALARIN ROOM IDLERINI LISTELER
