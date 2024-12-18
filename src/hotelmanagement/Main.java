@@ -191,7 +191,8 @@ public class Main {
             System.out.println("10. Delete Hotel");
             System.out.println("11. Add New Room");
             System.out.println("12. Update Hotel");
-            System.out.println("13. Return to Main Menu");
+            System.out.println("13. Generate Revenue Report");
+            System.out.println("14. Return to Main Menu");
 
             System.out.print("Enter your choice (1-13): ");
 
@@ -234,6 +235,9 @@ public class Main {
                     updateHotel(conn);
                     break;
                 case 13:
+                    addNewRevenueReport(conn);
+                    break;
+                case 14:
                     return;
                 default:
                     System.out.println("Invalid choice. Please try again.");
@@ -244,7 +248,7 @@ public class Main {
         while (true) {
             System.out.println("\n=== Housekeeping Portal ===");
             System.out.println("1. View Room Status");
-            System.out.println("2. Update Room Cleaning Status");
+            System.out.println("2. View Cleaning Schedule");
             System.out.println("3. View Cleaning Schedule");
             System.out.println("4. View Keeping Availability For Today");
             System.out.println("5. View Pending Housekeeping Tasks");
@@ -259,7 +263,7 @@ public class Main {
                     viewRoomStatus(conn);
                     break;
                 case 2:
-                    deleteHousekeepingSchedule(conn);
+                    viewCleaningScheduleByHousekeepingId(conn);
                     break;
                 case 3:
                     viewScheduleIdByHousekeepingId(conn);
