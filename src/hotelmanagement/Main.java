@@ -132,7 +132,8 @@ public class Main {
             System.out.println("8. View All Housekeepers Records and Their Availability");
             System.out.println("9. Delete Booking");
             System.out.println("10. View All Guests");
-            System.out.println("11. Return to Main Menu");
+            System.out.println("11. Delete HousekeepingSchedule");
+            System.out.println("12. Return to Main Menu");
 
             System.out.print("Enter your choice (1-11): ");
 
@@ -169,6 +170,9 @@ public class Main {
                     viewAllGuests(conn);
                     break;
                 case 11:
+                    deleteHousekeepingSchedule(conn);
+                    break;
+                case 12:
                     return;
                 default:
                     System.out.println("Invalid choice. Please try again.");
