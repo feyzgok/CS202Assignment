@@ -32,7 +32,7 @@ public class Main {
             //addNewRoom(myConnection);
             //deleteRoom(myConnection);
             //addNewUser(myConnection);
-            addNewRevenueReport(myConnection);
+            //addNewRevenueReport(myConnection);
             //checkAdminById(myConnection);
             //checkRoomById(myConnection);
             //viewAllUsers(myConnection);
@@ -43,7 +43,6 @@ public class Main {
             //viewAllHousekeepingRecords(myConnection);
             //viewHousekeepingAvailabilityForTodayByHousekeepingId(myConnection);
             //viewHousekeepingAvailabilityByHousekeepingId(myConnection);
-
             //viewAllHousekeepersRecordsAndAvailability(myConnection);
             //assignHousekeepingTask(myConnection);
             //viewAllHousekeepingSchedules(myConnection);
@@ -52,12 +51,10 @@ public class Main {
             //addNewGuest(myConnection);
             //deleteGuest(myConnection);
             //viewAllGuests(myConnection);
-
             //deleteUser(myConnection);
-
-
             //viewCleaningScheduleByHousekeepingId(myConnection);
             //viewScheduleIdByHousekeepingId(myConnection);
+
             System.out.println("Trying close connection");
             myConnection.close();
             System.out.println("Closed connection byebye");
