@@ -32,7 +32,7 @@ public class Main {
             //addNewRoom(myConnection);
             //deleteRoom(myConnection);
             //addNewUser(myConnection);
-
+            addNewRevenueReport(myConnection);
             //checkAdminById(myConnection);
             //checkRoomById(myConnection);
             //viewAllUsers(myConnection);
@@ -787,8 +787,32 @@ public class Main {
         String endDateInput = in.next();
         Date endDate = java.sql.Date.valueOf(LocalDate.parse(endDateInput));
 
-//TODO:
+        //payment date'i start ve end arasındaysa o payment'ın amount'ını revenue'ya ekle
+        String paymentSql = " SELECT public.payment.amount FROM public.payment where public.payment.payment_Status = 'Paid' and public.payment.payment_date between ? and ?; ";
+        PreparedStatement payment_prep_statement = myConnection.prepareStatement(paymentSql);
+        payment_prep_statement.setDate(1, (java.sql.Date) startDate);
+        payment_prep_statement.setDate(2, (java.sql.Date) endDate);
+        ResultSet rs = payment_prep_statement.executeQuery();
+        int revenueData = 0;
+        while (rs.next()) {
+            revenueData += rs.getInt("amount");
+        }
+
+        //System.out.println("Revenue: " + revenueData);
+
+        String sql = "INSERT INTO public.revenuereport (revenue, id, admin_ID, start_date, end_date, hotel_ID) VALUES(?, ?, ?, ?, ? ,?);";
+        PreparedStatement prep_statement = myConnection.prepareStatement(sql);
+        prep_statement.setInt(1, revenueData);
+        prep_statement.setInt(2, id);
+        prep_statement.setInt(3, adminId);
+        prep_statement.setDate(4,(java.sql.Date) startDate);
+        prep_statement.setDate(5,(java.sql.Date) endDate);
+        prep_statement.setInt(6, hotelId);
+
+        prep_statement.executeUpdate();
+
     }
+
 
     private static void addNewReceptionist(Connection myConnection, int receptionist_employeeId) throws SQLException {
         System.out.println("Now executing addNewReceptionist");
