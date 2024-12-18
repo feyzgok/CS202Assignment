@@ -8,11 +8,9 @@ import java.time.*;
 import java.util.*;
 import java.util.Date;
 
-//TODO:DELETE USER
-//todo:check assignhousekeeping by receptionist
 
 public class Main {
-//TODO:newID eklenirken auto increment olacak--yarının ikinci işi
+//TODO:newID eklenirken auto increment olacak
 
     //sadece user type seçilecek
     //bir tane main functionda global static variable tut:current user static type--herkes içindekini okuyabilir
@@ -46,8 +44,8 @@ public class Main {
             //viewHousekeepingAvailabilityForTodayByHousekeepingId(myConnection);
             //viewHousekeepingAvailabilityByHousekeepingId(myConnection);
 
-            //?viewAllHousekeepersRecordsAndAvailability(myConnection);
-
+            //viewAllHousekeepersRecordsAndAvailability(myConnection);
+            assignHousekeepingTask(myConnection);
             //viewAllHousekeepingSchedules(myConnection);
             //showAllRoomsByHotelId(myConnection);
             //checkHousekeepingStaffById(myConnection);
@@ -84,10 +82,9 @@ public class Main {
         int roomId = 0;
         int staffId = 0;
         while (!isValidID) {
-            System.out.println("Enter the room ID:");
+
             roomId = checkRoomById(myConnection);
 
-            System.out.println("Enter the housekeeping staff ID:");
             staffId = checkHousekeepingStaffById(myConnection);
 
             // Get the hotel ID for the housekeeping staff
@@ -117,7 +114,6 @@ public class Main {
         System.out.println("Enter the scheduled date (yyyy-mm-dd):");
         String scheduleDate = in.nextLine();
 
-        System.out.println("Enter the receptionist ID:");
         int receptionistId = checkReceptionist(myConnection);
 
         // Check if the schedule date is valid against existing bookings
@@ -649,7 +645,6 @@ public class Main {
         return scheduleId;
     }
 
-    // Method to check if a housekeeping schedule exists by its ID
     private static int checkHousekeepingScheduleById(Connection myConnection) throws SQLException {
         System.out.println("Now executing checkHousekeepingScheduleById");
         Scanner in = new Scanner(System.in);
